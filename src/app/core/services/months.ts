@@ -16,6 +16,7 @@ export class MonthsService {
   private state = signal<AppState>(structuredClone(DEFAULT_STATE));
 
   loading = signal(true);
+  authState = this.firestore.authState;
 
   months = computed(() => [...this.state().months].sort((a: MonthData, b: MonthData) => {
     if (a.year !== b.year) return b.year - a.year;
@@ -31,6 +32,24 @@ export class MonthsService {
     } finally {
       this.loading.set(false);
     }
+  }
+
+  async signInWithGoogle(): Promise<void> {
+    const state = await this.firestore.signInWithGoogle();
+    this.state.set(state);
+  }
+
+  async signOut(): Promise<void> {
+    await this.firestore.signOut();
+    this.state.set(structuredClone(DEFAULT_STATE));
+  }
+
+  get userEmail(): string | null {
+    return this.firestore.currentUser?.email ?? null;
+  }
+
+  get userPhoto(): string | null {
+    return this.firestore.currentUser?.photoURL ?? null;
   }
 
   private save(): void {

@@ -119,6 +119,18 @@ export class MonthsListComponent {
     });
   }
 
+  userEmail(): string | null {
+    return this.monthsService.userEmail;
+  }
+
+  userPhoto(): string | null {
+    return this.monthsService.userPhoto;
+  }
+
+  async signOut(): Promise<void> {
+    await this.monthsService.signOut();
+  }
+
   goToHistory(): void {
     this.router.navigate(['/history']);
   }

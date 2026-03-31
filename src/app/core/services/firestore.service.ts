@@ -1,7 +1,7 @@
-import { Injectable } from '@angular/core';
-import { signInAnonymously, onAuthStateChanged } from 'firebase/auth';
+import { Injectable, signal } from '@angular/core';
+import { onAuthStateChanged, signInWithPopup, signOut, User } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { firebaseAuth, firebaseDb } from './firebase';
+import { firebaseAuth, firebaseDb, googleProvider } from './firebase';
 import { AppState } from '../models';
 import { DEFAULT_STATE, STORAGE_KEY } from './storage';
 
@@ -9,62 +9,74 @@ import { DEFAULT_STATE, STORAGE_KEY } from './storage';
 export class FirestoreService {
   private uid: string | null = null;
 
-  async init(): Promise<AppState> {
-    try {
-      this.uid = await this.signIn();
-    } catch (authErr) {
-      // Firebase not configured or Anonymous Auth not enabled — use localStorage only
-      console.warn('[Firestore] Auth failed, running in offline mode:', authErr);
-      return this.loadLocal();
-    }
+  // null = checking auth, false = not signed in, true = signed in
+  authState = signal<'loading' | 'unauthenticated' | 'ready'>('loading');
 
-    try {
-      return await this.load();
-    } catch (loadErr) {
-      console.warn('[Firestore] Load failed, falling back to localStorage:', loadErr);
-      return this.loadLocal();
-    }
-  }
-
-  // Reuses existing anonymous session or creates a new one.
-  // The UID persists in IndexedDB across page reloads (cleared when incognito window closes).
-  private signIn(): Promise<string> {
+  // Called once at app startup. Resolves when auth state is known.
+  init(): Promise<AppState> {
     return new Promise((resolve, reject) => {
       const unsub = onAuthStateChanged(firebaseAuth, async user => {
         unsub();
-        try {
-          if (user) {
-            resolve(user.uid);
-          } else {
-            const cred = await signInAnonymously(firebaseAuth);
-            resolve(cred.user.uid);
+        if (user) {
+          this.uid = user.uid;
+          try {
+            const state = await this.load(user);
+            this.authState.set('ready');
+            resolve(state);
+          } catch (err) {
+            console.warn('[Firestore] Load failed, using localStorage:', err);
+            this.authState.set('ready');
+            resolve(this.loadLocal());
           }
-        } catch (err) {
-          reject(err);
+        } else {
+          // Not signed in — app will show login screen
+          this.authState.set('unauthenticated');
+          resolve(this.loadLocal()); // may return DEFAULT_STATE
         }
       });
     });
   }
 
-  private async load(): Promise<AppState> {
-    const ref = doc(firebaseDb, 'users', this.uid!, 'data', 'state');
+  async signInWithGoogle(): Promise<AppState> {
+    const cred = await signInWithPopup(firebaseAuth, googleProvider);
+    this.uid = cred.user.uid;
+    const state = await this.load(cred.user);
+    this.authState.set('ready');
+    return state;
+  }
 
+  async signOut(): Promise<void> {
+    await signOut(firebaseAuth);
+    this.uid = null;
+    this.authState.set('unauthenticated');
+  }
+
+  get currentUser(): User | null {
+    return firebaseAuth.currentUser;
+  }
+
+  private async load(user: User): Promise<AppState> {
+    const ref = doc(firebaseDb, 'users', user.uid, 'data', 'state');
     const snap = await getDoc(ref);
+
     if (snap.exists()) {
+      console.log('[Firestore] ✅ Loaded from Firestore (', user.email ?? user.uid, ')');
       return snap.data() as AppState;
     }
 
-    // No Firestore doc yet — try to migrate from localStorage (first login, or incognito reload)
+    // First login for this account — migrate localStorage if it has data
     const local = this.loadLocal();
     if (local.months.length > 0) {
-      console.log('[Firestore] Migrating localStorage → Firestore for UID', this.uid);
-      setDoc(ref, JSON.parse(JSON.stringify(local))).catch(console.error);
+      console.log('[Firestore] ⬆️ First login, migrating localStorage data...');
+      setDoc(ref, JSON.parse(JSON.stringify(local)))
+        .then(() => console.log('[Firestore] ✅ Migration saved OK'))
+        .catch(err => console.error('[Firestore] ❌ Migration failed:', err));
+    } else {
+      console.log('[Firestore] 🆕 First login, starting fresh (', user.email ?? user.uid, ')');
     }
     return local;
   }
 
-  // Reads from localStorage; falls back to DEFAULT_STATE.
-  // Used as offline fallback when Firebase is unavailable.
   private loadLocal(): AppState {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
@@ -76,19 +88,15 @@ export class FirestoreService {
     return structuredClone(DEFAULT_STATE);
   }
 
-  // Fire-and-forget — doesn't block the UI.
-  // Always writes to localStorage first; Firestore is secondary.
+  // Fire-and-forget. Always writes localStorage first; Firestore is secondary.
   save(state: AppState): void {
-    // localStorage is the primary offline store — always update it
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     } catch { /* quota exceeded */ }
 
     if (!this.uid) return;
-    const serialized = JSON.parse(JSON.stringify(state));
     const ref = doc(firebaseDb, 'users', this.uid, 'data', 'state');
-    setDoc(ref, serialized).catch(err =>
-      console.error('[Firestore] save failed:', err)
-    );
+    setDoc(ref, JSON.parse(JSON.stringify(state)))
+      .catch(err => console.error('[Firestore] ❌ Save failed:', err));
   }
 }

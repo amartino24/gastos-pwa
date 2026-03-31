@@ -15,6 +15,13 @@
   <button mat-icon-button (click)="goToTemplate()" matTooltip="Plantilla">
     <mat-icon>tune</mat-icon>
   </button>
+  <button mat-icon-button (click)="signOut()" [matTooltip]="userEmail() ?? 'Cerrar sesión'" class="avatar-btn">
+    @if (userPhoto()) {
+      <img [src]="userPhoto()!" alt="avatar" class="avatar-img" />
+    } @else {
+      <mat-icon>account_circle</mat-icon>
+    }
+  </button>
 </mat-toolbar>
 
 <div class="page-container">

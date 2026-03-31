@@ -2,17 +2,24 @@ import { Component, inject, OnInit } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MonthsService } from './core/services/months';
+import { LoginComponent } from './features/login/login';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, MatProgressSpinnerModule],
+  imports: [RouterOutlet, MatProgressSpinnerModule, LoginComponent],
   template: `
-    @if (monthsService.loading()) {
-      <div class="loading-overlay">
-        <mat-spinner diameter="48" />
-      </div>
-    } @else {
-      <router-outlet />
+    @switch (state()) {
+      @case ('loading') {
+        <div class="loading-overlay">
+          <mat-spinner diameter="48" />
+        </div>
+      }
+      @case ('unauthenticated') {
+        <app-login />
+      }
+      @default {
+        <router-outlet />
+      }
     }
   `,
   styles: [`
@@ -22,12 +29,17 @@ import { MonthsService } from './core/services/months';
       display: flex;
       align-items: center;
       justify-content: center;
-      background: #f5f5f5;
+      background: #f8fafc;
     }
   `],
 })
 export class App implements OnInit {
-  monthsService = inject(MonthsService);
+  private monthsService = inject(MonthsService);
+
+  state() {
+    if (this.monthsService.loading()) return 'loading';
+    return this.monthsService.authState();
+  }
 
   ngOnInit(): void {
     this.monthsService.init();
