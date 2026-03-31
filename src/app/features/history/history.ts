@@ -36,7 +36,7 @@ export class History implements AfterViewInit, OnDestroy {
   private router = inject(Router);
 
   @ViewChild('usdChart')          usdRef!:  ElementRef<HTMLCanvasElement>;
-  @ViewChild('arsChart')          arsRef!:  ElementRef<HTMLCanvasElement>;
+  @ViewChild('categoriesChart')   catRef!:  ElementRef<HTMLCanvasElement>;
   @ViewChild('tcChart')           tcRef!:   ElementRef<HTMLCanvasElement>;
   @ViewChild('distributionChart') distRef!: ElementRef<HTMLCanvasElement>;
 
@@ -104,7 +104,7 @@ export class History implements AfterViewInit, OnDestroy {
     const labels = months.map(m => `${MONTH_NAMES[m.month - 1].slice(0, 3)} ${String(m.year).slice(2)}`);
 
     this.buildUSDChart(months, labels);
-    this.buildARSChart(months, labels);
+    this.buildCategoriesChart(months, labels);
     this.buildTCChart(months, labels);
     this.buildDistributionChart(months);
   }
@@ -138,46 +138,53 @@ export class History implements AfterViewInit, OnDestroy {
     this.charts.push(new Chart(this.usdRef.nativeElement, config));
   }
 
-  private buildARSChart(months: MonthData[], labels: string[]): void {
-    const arsData = months.map(m =>
-      m.expenseGroups.reduce((s, g) => s + g.items.reduce((a, i) => a + (i.amount || 0), 0), 0)
-    );
-    const paidData = months.map(m => this.monthsService.calcPaidSummary(m).paidARS);
+  private buildCategoriesChart(months: MonthData[], labels: string[]): void {
+    // Collect all unique category names across all months (preserve first-seen order)
+    const allNames = [...new Set(months.flatMap(m => m.expenseGroups.map(g => g.name)))];
 
-    const config: ChartConfiguration<'bar'> = {
-      type: 'bar',
-      data: {
-        labels,
-        datasets: [
-          {
-            label: 'Pagado',
-            data: paidData,
-            backgroundColor: '#22c55ecc',
-            borderColor: '#22c55e',
-            borderWidth: 1,
-            borderRadius: 4,
-          },
-          {
-            label: 'Pendiente',
-            data: arsData.map((t, i) => t - paidData[i]),
-            backgroundColor: '#e2e8f0cc',
-            borderColor: '#94a3b8',
-            borderWidth: 1,
-            borderRadius: 4,
-          },
-        ],
-      },
+    const datasets = allNames.map((name, i) => {
+      const color = COLORS[i % COLORS.length];
+      return {
+        label: name,
+        data: months.map(m => {
+          const group = m.expenseGroups.find(g => g.name === name);
+          return group ? group.items.reduce((s, item) => s + (item.amount || 0), 0) : 0;
+        }),
+        borderColor: color,
+        backgroundColor: color + '22',
+        borderWidth: 2,
+        pointRadius: 4,
+        pointBackgroundColor: color,
+        tension: 0.3,
+        fill: false,
+      };
+    });
+
+    const config: ChartConfiguration<'line'> = {
+      type: 'line',
+      data: { labels, datasets },
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        plugins: { legend: { display: true } },
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: { boxWidth: 12, padding: 12, font: { size: 11 } },
+          },
+          tooltip: {
+            callbacks: {
+              label: ctx => ` ${ctx.dataset.label}: $${(ctx.raw as number).toLocaleString('es-AR')}`,
+            },
+          },
+        },
         scales: {
-          x: { stacked: true, grid: { display: false } },
-          y: { stacked: true, ticks: { callback: v => `$${Number(v).toLocaleString('es-AR')}` } },
+          x: { grid: { display: false } },
+          y: { ticks: { callback: v => `$${Number(v).toLocaleString('es-AR')}` } },
         },
       },
     };
-    this.charts.push(new Chart(this.arsRef.nativeElement, config));
+    this.charts.push(new Chart(this.catRef.nativeElement, config));
   }
 
   private buildTCChart(months: MonthData[], labels: string[]): void {

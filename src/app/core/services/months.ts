@@ -242,6 +242,56 @@ export class MonthsService {
     this.save();
   }
 
+  // ── Template methods ──────────────────────────────────────────────────────
+
+  template = computed(() => this.state().template);
+
+  updateTemplateItem(groupId: string, item: ExpenseItem): void {
+    this.state.update(s => ({
+      ...s,
+      template: {
+        ...s.template,
+        expenseGroups: s.template.expenseGroups.map(g =>
+          g.id === groupId ? { ...g, items: g.items.map(i => i.id === item.id ? item : i) } : g
+        ),
+      },
+    }));
+    this.save();
+  }
+
+  addTemplateItem(groupId: string, name: string, amount: number): void {
+    const item: ExpenseItem = { id: uuid(), name, amount };
+    this.state.update(s => ({
+      ...s,
+      template: {
+        ...s.template,
+        expenseGroups: s.template.expenseGroups.map(g =>
+          g.id === groupId ? { ...g, items: [...g.items, item] } : g
+        ),
+      },
+    }));
+    this.save();
+  }
+
+  removeTemplateItem(groupId: string, itemId: string): void {
+    this.state.update(s => ({
+      ...s,
+      template: {
+        ...s.template,
+        expenseGroups: s.template.expenseGroups.map(g =>
+          g.id === groupId ? { ...g, items: g.items.filter(i => i.id !== itemId) } : g
+        ),
+      },
+    }));
+    this.save();
+  }
+
+  resetTemplateToDefault(): void {
+    const defaultTemplate = structuredClone(DEFAULT_STATE.template);
+    this.state.update(s => ({ ...s, template: defaultTemplate }));
+    this.save();
+  }
+
   calcPaidSummary(month: MonthData): PaidSummary {
     let totalItems = 0;
     let paidItems = 0;

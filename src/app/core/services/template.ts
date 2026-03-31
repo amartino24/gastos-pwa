@@ -1,78 +1,35 @@
-import { Injectable, signal, computed, inject } from '@angular/core';
-import { StorageService } from './storage';
-import { AppState, ExpenseItem, BankAccount } from '../models';
+import { Injectable, inject } from '@angular/core';
+import { MonthsService } from './months';
+import { ExpenseItem, BankAccount } from '../models';
 
-function uuid(): string {
-  return crypto.randomUUID();
-}
-
+/**
+ * Thin facade over MonthsService for template operations.
+ * All state lives in MonthsService so template changes are
+ * immediately visible when creating new months.
+ */
 @Injectable({ providedIn: 'root' })
 export class TemplateService {
-  private storage = inject(StorageService);
-  private state = signal<AppState>(this.storage.load());
+  private months = inject(MonthsService);
 
-  template = computed(() => this.state().template);
-
-  private save(): void {
-    this.storage.save(this.state());
-  }
+  template = this.months.template;
 
   updateTemplateItem(groupId: string, item: ExpenseItem): void {
-    this.state.update(s => ({
-      ...s,
-      template: {
-        ...s.template,
-        expenseGroups: s.template.expenseGroups.map(g =>
-          g.id === groupId
-            ? { ...g, items: g.items.map(i => i.id === item.id ? item : i) }
-            : g
-        ),
-      },
-    }));
-    this.save();
+    this.months.updateTemplateItem(groupId, item);
   }
 
   addTemplateItem(groupId: string, name: string, amount: number): void {
-    const item: ExpenseItem = { id: uuid(), name, amount };
-    this.state.update(s => ({
-      ...s,
-      template: {
-        ...s.template,
-        expenseGroups: s.template.expenseGroups.map(g =>
-          g.id === groupId ? { ...g, items: [...g.items, item] } : g
-        ),
-      },
-    }));
-    this.save();
+    this.months.addTemplateItem(groupId, name, amount);
   }
 
   removeTemplateItem(groupId: string, itemId: string): void {
-    this.state.update(s => ({
-      ...s,
-      template: {
-        ...s.template,
-        expenseGroups: s.template.expenseGroups.map(g =>
-          g.id === groupId ? { ...g, items: g.items.filter(i => i.id !== itemId) } : g
-        ),
-      },
-    }));
-    this.save();
+    this.months.removeTemplateItem(groupId, itemId);
   }
 
-  updateTemplateBankAccount(account: BankAccount): void {
-    this.state.update(s => ({
-      ...s,
-      template: {
-        ...s.template,
-        bankAccounts: s.template.bankAccounts.map(b => b.id === account.id ? account : b),
-      },
-    }));
-    this.save();
+  updateTemplateBankAccount(_account: BankAccount): void {
+    // not implemented yet
   }
 
   resetToDefault(): void {
-    const defaultTemplate = this.storage.getDefaultTemplate();
-    this.state.update(s => ({ ...s, template: defaultTemplate }));
-    this.save();
+    this.months.resetTemplateToDefault();
   }
 }
