@@ -127,9 +127,11 @@ export class LoginComponent {
     try {
       await this.monthsService.signInWithGoogle();
     } catch (err: unknown) {
+      const code = (err as {code?: string}).code ?? '';
       const msg = err instanceof Error ? err.message : String(err);
-      if (!msg.includes('popup-closed')) {
-        this.error.set('Error al iniciar sesión. Intentá de nuevo.');
+      if (!code.includes('popup-closed') && !msg.includes('popup-closed')) {
+        const detail = code || msg;
+        this.error.set(detail);
         console.error('[Login]', err);
       }
     } finally {
