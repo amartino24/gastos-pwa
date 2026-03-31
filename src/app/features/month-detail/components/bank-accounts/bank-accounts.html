@@ -50,6 +50,39 @@
             }
           </div>
         }
+
+        <!-- Dates row -->
+        <div class="dates-row">
+          <div class="date-field">
+            <span class="date-label">Cierre</span>
+            @if (!readonly) {
+              <input class="date-input" type="date"
+                [value]="account.fechaCierre ?? ''"
+                (change)="updateDate(account, 'fechaCierre', $any($event.target).value)" />
+            } @else if (account.fechaCierre) {
+              <span class="date-value">{{ formatDate(account.fechaCierre) }}</span>
+            } @else {
+              <span class="date-empty">—</span>
+            }
+          </div>
+          <div class="date-field">
+            <span class="date-label">Vence</span>
+            @if (!readonly) {
+              <input class="date-input" type="date"
+                [value]="account.fechaVencimiento ?? ''"
+                (change)="updateDate(account, 'fechaVencimiento', $any($event.target).value)" />
+            } @else if (account.fechaVencimiento) {
+              <span class="date-value">{{ formatDate(account.fechaVencimiento) }}</span>
+            } @else {
+              <span class="date-empty">—</span>
+            }
+            @if (account.fechaVencimiento) {
+              <span class="days-badge" [class]="daysClass(account.fechaVencimiento)">
+                {{ daysLabel(account.fechaVencimiento) }}
+              </span>
+            }
+          </div>
+        </div>
       </div>
     }
   </div>

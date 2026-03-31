@@ -166,6 +166,65 @@
   &:hover { color: #e53935; }
 }
 
+.dates-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.date-field {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.date-label {
+  font-size: 0.65rem;
+  color: #bdbdbd;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.date-input {
+  border: none;
+  border-bottom: 1px solid #e0e0e0;
+  background: transparent;
+  font-size: 0.75rem;
+  color: #424242;
+  padding: 1px 0;
+  outline: none;
+  width: 100%;
+  cursor: pointer;
+
+  &:focus { border-bottom-color: #7b1fa2; color: #5e35b1; }
+  &::-webkit-calendar-picker-indicator { opacity: 0.4; width: 12px; cursor: pointer; }
+}
+
+.date-value {
+  font-size: 0.78rem;
+  color: #424242;
+  font-weight: 500;
+}
+
+.date-empty {
+  font-size: 0.78rem;
+  color: #e0e0e0;
+}
+
+.days-badge {
+  font-size: 0.62rem;
+  font-weight: 600;
+  padding: 1px 5px;
+  border-radius: 6px;
+  width: fit-content;
+
+  &.days-ok      { background: #e8f5e9; color: #2e7d32; }
+  &.days-soon    { background: #fff8e1; color: #f57f17; }
+  &.days-urgent  { background: #fff3e0; color: #e65100; }
+  &.days-overdue { background: #ffebee; color: #c62828; }
+}
+
 .bank-amount-wrap {
   display: flex;
   align-items: baseline;
