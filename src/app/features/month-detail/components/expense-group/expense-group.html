@@ -1,0 +1,39 @@
+<mat-expansion-panel style="margin-bottom:8px">
+  <mat-expansion-panel-header>
+    <mat-panel-title>{{ group.name }}</mat-panel-title>
+    <mat-panel-description style="justify-content:flex-end;font-weight:500">
+      ${{ total | number:'1.0-0':'es-AR' }}
+    </mat-panel-description>
+  </mat-expansion-panel-header>
+
+  @for (item of group.items; track item.id) {
+    <div class="item-row">
+      <input class="item-name-input" [value]="item.name"
+        (blur)="updateItemName(item, $any($event.target).value)"
+        [readonly]="readonly" />
+      <mat-form-field appearance="outline" class="amount-field">
+        <span matTextPrefix>$&nbsp;</span>
+        <input matInput type="number" [value]="item.amount"
+          (change)="updateItem(item, $any($event.target).value)"
+          [readonly]="readonly" min="0" />
+      </mat-form-field>
+      @if (!readonly) {
+        <button mat-icon-button color="warn" (click)="removeItem(item.id)">
+          <mat-icon>close</mat-icon>
+        </button>
+      }
+    </div>
+  }
+
+  @if (!readonly) {
+    <div style="display:flex;justify-content:flex-end;padding:8px 0">
+      <button mat-button color="primary" (click)="addItem()">
+        <mat-icon>add</mat-icon> Agregar
+      </button>
+    </div>
+  }
+
+  <mat-action-row>
+    <strong>Total: ${{ total | number:'1.0-0':'es-AR' }}</strong>
+  </mat-action-row>
+</mat-expansion-panel>

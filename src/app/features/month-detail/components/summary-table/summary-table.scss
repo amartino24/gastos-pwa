@@ -1,0 +1,53 @@
+.summary-section {
+  padding: 8px 0;
+}
+
+.section-title {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--mat-sys-primary);
+  margin-bottom: 4px;
+}
+
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 0;
+  font-size: 0.9rem;
+
+  &.highlight {
+    background: var(--mat-sys-surface-variant);
+    border-radius: 4px;
+    padding: 6px 8px;
+    margin: 2px 0;
+  }
+
+  &.editable {
+    align-items: flex-start;
+  }
+}
+
+.inline-field {
+  width: 160px;
+}
+
+.usd-value {
+  color: var(--mat-sys-tertiary, #1565c0);
+  font-size: 1rem;
+}
+
+.total-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 8px;
+  background: var(--mat-sys-primary-container);
+  border-radius: 8px;
+  margin-top: 8px;
+}
+
+.usd-total {
+  font-size: 1.3rem;
+  color: var(--mat-sys-on-primary-container);
+}

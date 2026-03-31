@@ -1,0 +1,26 @@
+.item-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+}
+
+.item-name-input {
+  flex: 1;
+  border: none;
+  background: transparent;
+  font: var(--mat-sys-body-medium);
+  color: var(--mat-sys-on-surface);
+  padding: 4px 0;
+  outline: none;
+  min-width: 0;
+
+  &:focus {
+    border-bottom: 1px solid var(--mat-sys-primary);
+  }
+}
+
+.amount-field {
+  width: 140px;
+  flex-shrink: 0;
+}

@@ -1,0 +1,36 @@
+@if (month(); as month) {
+  <mat-toolbar color="primary">
+    <button mat-icon-button (click)="goBack()">
+      <mat-icon>arrow_back</mat-icon>
+    </button>
+    <span>{{ getTitle(month) }}</span>
+    <span style="flex:1"></span>
+    @if (month.isClosed) {
+      <mat-chip style="margin-right:8px">Cerrado</mat-chip>
+      <button mat-icon-button (click)="reopenMonth()" matTooltip="Reabrir mes">
+        <mat-icon>lock_open</mat-icon>
+      </button>
+    } @else {
+      <button mat-icon-button (click)="closeMonth()" matTooltip="Cerrar mes">
+        <mat-icon>lock</mat-icon>
+      </button>
+    }
+  </mat-toolbar>
+
+  <div class="page-container">
+
+    <app-month-header [month]="month" />
+
+    @for (group of month.expenseGroups; track group.id) {
+      <app-expense-group [monthId]="monthId" [group]="group" [readonly]="month.isClosed" />
+    }
+
+    <app-bank-accounts [monthId]="monthId" [accounts]="month.bankAccounts" [readonly]="month.isClosed" />
+
+    <app-summary-table [summary]="summary()" [exchangeRate]="month.exchangeRate" [totalUSD]="totalUSD()"
+      [monthId]="monthId" [readonly]="month.isClosed" />
+
+  </div>
+} @else {
+  <p style="padding:16px">Mes no encontrado.</p>
+}

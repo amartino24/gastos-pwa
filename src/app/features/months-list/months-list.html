@@ -1,0 +1,97 @@
+<mat-toolbar color="primary">
+  <span>Mis Gastos</span>
+  <span style="flex:1"></span>
+  <button mat-icon-button (click)="goToTemplate()" matTooltip="Editar plantilla">
+    <mat-icon>settings</mat-icon>
+  </button>
+</mat-toolbar>
+
+<div class="page-container">
+
+  <button mat-fab extended color="primary" style="margin-bottom:16px;width:100%"
+    (click)="showNewMonthForm = !showNewMonthForm">
+    <mat-icon>add</mat-icon>
+    Nuevo mes
+  </button>
+
+  @if (showNewMonthForm) {
+    <mat-card style="margin-bottom:16px">
+      <mat-card-header>
+        <mat-card-title>Nuevo mes</mat-card-title>
+      </mat-card-header>
+      <mat-card-content>
+        <form [formGroup]="newMonthForm" style="display:flex;flex-direction:column;gap:12px;padding-top:16px">
+          <div style="display:flex;gap:8px">
+            <mat-form-field appearance="outline" style="flex:1">
+              <mat-label>Mes</mat-label>
+              <mat-select formControlName="month">
+                @for (m of availableMonths(); track m.value) {
+                  <mat-option [value]="m.value">{{ m.label }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+            <mat-form-field appearance="outline" style="flex:1">
+              <mat-label>Año</mat-label>
+              <mat-select formControlName="year">
+                @for (y of years; track y) {
+                  <mat-option [value]="y">{{ y }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+          </div>
+          <mat-form-field appearance="outline">
+            <mat-label>Tipo de cambio (ARS/USD)</mat-label>
+            <span matTextPrefix>$&nbsp;</span>
+            <input matInput type="number" formControlName="exchangeRate" min="1" />
+          </mat-form-field>
+          <div style="display:flex;gap:8px;justify-content:flex-end">
+            <button mat-button (click)="showNewMonthForm = false">Cancelar</button>
+            <button mat-flat-button color="primary" (click)="createMonth()" [disabled]="newMonthForm.invalid">
+              Crear
+            </button>
+          </div>
+        </form>
+      </mat-card-content>
+    </mat-card>
+  }
+
+  @if (months().length === 0) {
+    <div style="text-align:center;padding:48px 16px;color:var(--mat-sys-on-surface-variant)">
+      <mat-icon style="font-size:48px;width:48px;height:48px">calendar_month</mat-icon>
+      <p>No hay meses todavía. ¡Creá el primero!</p>
+    </div>
+  }
+
+  @for (month of months(); track month.id) {
+    <mat-card (click)="openMonth(month.id)" style="cursor:pointer">
+      <mat-card-header>
+        <mat-card-title>
+          {{ getMonthLabel(month.month) }} {{ month.year }}
+        </mat-card-title>
+        <mat-card-subtitle>
+          TC: ${{ month.exchangeRate | number:'1.0-0':'es-AR' }} ARS/USD
+        </mat-card-subtitle>
+        <span style="flex:1"></span>
+        <div style="display:flex;align-items:center;gap:8px">
+          @if (month.isClosed) {
+            <mat-chip color="primary" highlighted>Cerrado</mat-chip>
+          } @else {
+            <mat-chip>Abierto</mat-chip>
+          }
+          <button mat-icon-button color="warn" (click)="deleteMonth($event, month.id)">
+            <mat-icon>delete</mat-icon>
+          </button>
+        </div>
+      </mat-card-header>
+      <mat-card-content style="padding-top:12px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <span style="color:var(--mat-sys-on-surface-variant)">USD a vender</span>
+          <strong style="font-size:1.2rem">
+            USD {{ getTotalUSD(month) | number:'1.2-2':'es-AR' }}
+          </strong>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  }
+
+</div>
