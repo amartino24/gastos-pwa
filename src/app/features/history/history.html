@@ -1,0 +1,94 @@
+<mat-toolbar>
+  <button mat-icon-button (click)="goBack()">
+    <mat-icon>arrow_back</mat-icon>
+  </button>
+  <mat-icon style="margin:0 8px">bar_chart</mat-icon>
+  <span style="font-weight:600;letter-spacing:0.5px">Historial</span>
+</mat-toolbar>
+
+<div class="page-container">
+
+  @if (!hasData()) {
+    <div class="empty-state">
+      <mat-icon>insert_chart_outlined</mat-icon>
+      <p>Sin datos todavía</p>
+      <span>Creá al menos un mes para ver los gráficos</span>
+    </div>
+  } @else {
+
+    <!-- Stats summary -->
+    @let s = stats();
+    @if (s) {
+      <div class="stats-row">
+        <div class="stat-card">
+          <div class="stat-label">Promedio USD / mes</div>
+          <div class="stat-value">{{ s.avgUSD | number:'1.0-0':'es-AR' }} <small>USD</small></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Máximo USD / mes</div>
+          <div class="stat-value">{{ s.maxUSD | number:'1.0-0':'es-AR' }} <small>USD</small></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Promedio gasto ARS</div>
+          <div class="stat-value">{{ s.avgARS | number:'1.0-0':'es-AR' }} <small>ARS</small></div>
+        </div>
+        <div class="stat-card accent">
+          <div class="stat-label">Meses analizados</div>
+          <div class="stat-value">{{ s.totalMonths }}</div>
+        </div>
+      </div>
+    }
+
+    <!-- Range filter -->
+    <div class="range-row">
+      <button class="range-btn" [class.active]="selectedRange() === 'all'" (click)="setRange('all')">Todos</button>
+      <button class="range-btn" [class.active]="selectedRange() === '12'" (click)="setRange('12')">Últimos 12</button>
+      <button class="range-btn" [class.active]="selectedRange() === '6'"  (click)="setRange('6')">Últimos 6</button>
+    </div>
+
+    <!-- Charts grid -->
+    <div class="charts-grid">
+
+      <div class="chart-card wide">
+        <div class="chart-header">
+          <mat-icon class="chart-icon" style="color:#6366f1">attach_money</mat-icon>
+          <span class="chart-title">USD a vender por mes</span>
+        </div>
+        <div class="chart-wrapper">
+          <canvas #usdChart></canvas>
+        </div>
+      </div>
+
+      <div class="chart-card wide">
+        <div class="chart-header">
+          <mat-icon class="chart-icon" style="color:#22c55e">payments</mat-icon>
+          <span class="chart-title">Gastos ARS — pagado vs pendiente</span>
+        </div>
+        <div class="chart-wrapper">
+          <canvas #arsChart></canvas>
+        </div>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-header">
+          <mat-icon class="chart-icon" style="color:#f59e0b">trending_up</mat-icon>
+          <span class="chart-title">Tipo de cambio ARS/USD</span>
+        </div>
+        <div class="chart-wrapper">
+          <canvas #tcChart></canvas>
+        </div>
+      </div>
+
+      <div class="chart-card">
+        <div class="chart-header">
+          <mat-icon class="chart-icon" style="color:#06b6d4">donut_large</mat-icon>
+          <span class="chart-title">Distribución de gastos</span>
+        </div>
+        <div class="chart-wrapper tall">
+          <canvas #distributionChart></canvas>
+        </div>
+      </div>
+
+    </div>
+  }
+</div>

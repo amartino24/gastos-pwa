@@ -8,9 +8,44 @@
 
 .group-total {
   justify-content: flex-end !important;
+  align-items: center !important;
+  gap: 8px;
   font-weight: 600;
   font-size: 0.9rem;
   color: #5e35b1;
+}
+
+.paid-chip {
+  font-size: 0.72rem;
+  font-weight: 600;
+  background: #ede7f6;
+  color: #7b1fa2;
+  border-radius: 99px;
+  padding: 2px 7px;
+  white-space: nowrap;
+
+  &.paid-chip-done {
+    background: #e8f5e9;
+    color: #2e7d32;
+  }
+}
+
+.group-progress {
+  height: 3px;
+  background: #f3e5f5;
+  border-radius: 0;
+  margin: 0 -24px;
+  overflow: hidden;
+}
+
+.group-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #7b1fa2, #ce93d8);
+  transition: width 0.4s ease;
+
+  &.group-progress-done {
+    background: linear-gradient(90deg, #2e7d32, #66bb6a);
+  }
 }
 
 .items-list {

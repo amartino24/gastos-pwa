@@ -2,9 +2,23 @@
   <mat-expansion-panel-header>
     <mat-panel-title class="group-title">{{ group.name }}</mat-panel-title>
     <mat-panel-description class="group-total">
-      ${{ total | number:'1.0-0':'es-AR' }}
+      <span>${{ total | number:'1.0-0':'es-AR' }}</span>
+      @if (group.items.length) {
+        <span class="paid-chip" [class.paid-chip-done]="paidCount === group.items.length">
+          {{ paidCount }}/{{ group.items.length }}
+        </span>
+      }
     </mat-panel-description>
   </mat-expansion-panel-header>
+
+  @if (group.items.length) {
+    <div class="group-progress">
+      <div class="group-progress-fill"
+        [style.width.%]="paidPercent"
+        [class.group-progress-done]="paidPercent === 100">
+      </div>
+    </div>
+  }
 
   <div class="items-list">
     @for (item of group.items; track item.id) {

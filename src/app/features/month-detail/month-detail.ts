@@ -8,7 +8,7 @@ import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatChipsModule } from '@angular/material/chips';
 import { MonthsService } from '../../core/services/months';
-import { MonthData, MONTH_NAMES } from '../../core/models';
+import { MonthData, MONTH_NAMES, PaidSummary } from '../../core/models';
 import { ExpenseGroupComponent } from './components/expense-group/expense-group';
 import { BankAccountsComponent } from './components/bank-accounts/bank-accounts';
 import { SummaryTableComponent } from './components/summary-table/summary-table';
@@ -39,6 +39,10 @@ export class MonthDetailComponent {
     return m ? this.monthsService.calcSummary(m) : [];
   });
   totalUSD = computed(() => this.summary().reduce((s, r) => s + r.usdNecesarios, 0));
+  paidSummary = computed((): PaidSummary | null => {
+    const m = this.month();
+    return m ? this.monthsService.calcPaidSummary(m) : null;
+  });
 
   getTitle(month: MonthData): string {
     return `${MONTH_NAMES[month.month - 1]} ${month.year}`;

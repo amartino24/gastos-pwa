@@ -10,10 +10,12 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MonthsService } from '../../core/services/months';
 import { ConfirmDialog } from '../../shared/components/confirm-dialog/confirm-dialog';
-import { MONTH_NAMES, MonthData } from '../../core/models';
+import { AppState, MONTH_NAMES, MonthData, PaidSummary } from '../../core/models';
 
 @Component({
   selector: 'app-months-list',
@@ -21,7 +23,7 @@ import { MONTH_NAMES, MonthData } from '../../core/models';
     CommonModule, ReactiveFormsModule,
     MatToolbarModule, MatCardModule, MatButtonModule, MatIconModule,
     MatDialogModule, MatFormFieldModule, MatInputModule, MatSelectModule,
-    MatChipsModule,
+    MatChipsModule, MatSnackBarModule, MatTooltipModule,
   ],
   templateUrl: './months-list.html',
   styleUrl: './months-list.scss',
@@ -31,6 +33,7 @@ export class MonthsListComponent {
   private router = inject(Router);
   private dialog = inject(MatDialog);
   private fb = inject(FormBuilder);
+  private snackBar = inject(MatSnackBar);
 
   months = this.monthsService.months;
   monthNames = MONTH_NAMES;
@@ -52,8 +55,42 @@ export class MonthsListComponent {
     return summary.reduce((sum, s) => sum + s.usdNecesarios, 0);
   }
 
+  getPaidSummary(month: MonthData): PaidSummary {
+    return this.monthsService.calcPaidSummary(month);
+  }
+
   getMonthLabel(month: number): string {
     return MONTH_NAMES[month - 1];
+  }
+
+  exportData(): void {
+    const state = this.monthsService.getState();
+    const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `gastos-backup-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    this.snackBar.open('Backup exportado', 'OK', { duration: 2000 });
+  }
+
+  importData(event: Event): void {
+    const file = (event.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const state = JSON.parse(e.target?.result as string) as AppState;
+        if (!state.months || !state.template) throw new Error('Formato inválido');
+        this.monthsService.loadState(state);
+        this.snackBar.open('Datos importados correctamente', 'OK', { duration: 3000 });
+      } catch {
+        this.snackBar.open('Error: el archivo no es válido', 'OK', { duration: 3000 });
+      }
+      (event.target as HTMLInputElement).value = '';
+    };
+    reader.readAsText(file);
   }
 
   openMonth(id: string): void {
@@ -80,6 +117,10 @@ export class MonthsListComponent {
     ref.afterClosed().subscribe(result => {
       if (result) this.monthsService.deleteMonth(monthId);
     });
+  }
+
+  goToHistory(): void {
+    this.router.navigate(['/history']);
   }
 
   goToTemplate(): void {

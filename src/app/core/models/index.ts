@@ -12,10 +12,17 @@ export interface ExpenseGroup {
   items: ExpenseItem[];
 }
 
+export interface BankAccountStatement {
+  filename: string;
+  extractedAmount: number;
+  uploadedAt: string;
+}
+
 export interface BankAccount {
   id: string;
   name: string;
   total: number;
+  statement?: BankAccountStatement;
 }
 
 export interface Pocket {
@@ -39,6 +46,14 @@ export interface PocketSummary {
   arsNecesarios: number;
 }
 
+export interface PaidSummary {
+  totalItems: number;
+  paidItems: number;
+  totalARS: number;
+  paidARS: number;
+  pendingARS: number;
+}
+
 export interface MonthData {
   id: string;
   year: number;
@@ -49,6 +64,7 @@ export interface MonthData {
   pockets: Pocket[];
   isClosed: boolean;
   closedAt?: string;
+  notes?: string;
 }
 
 export interface Template {

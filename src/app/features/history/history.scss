@@ -1,0 +1,137 @@
+.page-container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 16px;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 80px 24px;
+  color: #94a3b8;
+  text-align: center;
+
+  mat-icon { font-size: 56px; width: 56px; height: 56px; }
+  p { font-size: 1.1rem; margin: 0; color: #64748b; }
+  span { font-size: 0.875rem; }
+}
+
+// ---------- Stats row ----------
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  margin-bottom: 16px;
+
+  @media (max-width: 600px) {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.stat-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 14px 16px;
+  box-shadow: 0 1px 4px rgba(0,0,0,.06);
+  border-left: 3px solid #e2e8f0;
+
+  &.accent { border-left-color: #6366f1; }
+
+  .stat-label {
+    font-size: 0.72rem;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+  }
+
+  .stat-value {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #1e293b;
+
+    small {
+      font-size: 0.7rem;
+      font-weight: 400;
+      color: #94a3b8;
+      margin-left: 2px;
+    }
+  }
+}
+
+// ---------- Range filter ----------
+.range-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.range-btn {
+  padding: 6px 14px;
+  border-radius: 20px;
+  border: 1.5px solid #e2e8f0;
+  background: #fff;
+  color: #64748b;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &:hover { border-color: #6366f1; color: #6366f1; }
+  &.active {
+    background: #6366f1;
+    border-color: #6366f1;
+    color: #fff;
+  }
+}
+
+// ---------- Charts grid ----------
+.charts-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+
+  @media (max-width: 640px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.chart-card {
+  background: #fff;
+  border-radius: 14px;
+  padding: 16px;
+  box-shadow: 0 1px 6px rgba(0,0,0,.07);
+
+  &.wide {
+    grid-column: 1 / -1;
+  }
+}
+
+.chart-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.chart-icon {
+  font-size: 20px;
+  width: 20px;
+  height: 20px;
+}
+
+.chart-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #374151;
+}
+
+.chart-wrapper {
+  position: relative;
+  height: 220px;
+
+  &.tall { height: 260px; }
+}

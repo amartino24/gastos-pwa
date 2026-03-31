@@ -1,9 +1,9 @@
 import { Injectable } from '@angular/core';
 import { AppState, Template } from '../models';
 
-const STORAGE_KEY = 'gastos-app-state';
+export const STORAGE_KEY = 'gastos-app-state';
 
-const DEFAULT_STATE: AppState = {
+export const DEFAULT_STATE: AppState = {
   months: [
     {
       id: '2026-04',
@@ -62,7 +62,6 @@ const DEFAULT_STATE: AppState = {
         { id: 'apr-bank-galicia', name: 'Galicia', total: 980571 },
         { id: 'apr-bank-santander', name: 'Santander', total: 2173000 },
         { id: 'apr-bank-mpago', name: 'Mercado Pago', total: 0 },
-        { id: 'apr-bank-macro', name: 'Macro', total: 0 },
       ],
       pockets: [
         {
@@ -142,7 +141,6 @@ const DEFAULT_STATE: AppState = {
       { id: 'bank-galicia', name: 'Galicia', total: 0 },
       { id: 'bank-santander', name: 'Santander', total: 0 },
       { id: 'bank-mpago', name: 'Mercado Pago', total: 0 },
-      { id: 'bank-macro', name: 'Macro', total: 0 },
     ],
     pockets: [
       { id: 'pocket-efectivo', name: 'Efectivo', groupIds: ['grp-efectivo'], isBanco: false },

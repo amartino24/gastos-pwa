@@ -21,6 +21,41 @@
 
     <app-month-header [month]="month" />
 
+    @if (paidSummary(); as ps) {
+      @if (ps.totalItems > 0) {
+        <div class="paid-summary-card">
+          <div class="paid-summary-row">
+            <div class="paid-summary-item paid">
+              <span class="ps-icon">✓</span>
+              <div>
+                <div class="ps-label">Pagado</div>
+                <div class="ps-amount">${{ ps.paidARS | number:'1.0-0':'es-AR' }}</div>
+                <div class="ps-count">{{ ps.paidItems }} ítems</div>
+              </div>
+            </div>
+            <div class="paid-summary-divider"></div>
+            <div class="paid-summary-item pending">
+              <span class="ps-icon">○</span>
+              <div>
+                <div class="ps-label">Pendiente</div>
+                <div class="ps-amount">${{ ps.pendingARS | number:'1.0-0':'es-AR' }}</div>
+                <div class="ps-count">{{ ps.totalItems - ps.paidItems }} ítems</div>
+              </div>
+            </div>
+          </div>
+          <div class="ps-progress-track">
+            <div class="ps-progress-fill"
+              [style.width.%]="ps.totalItems ? (ps.paidItems / ps.totalItems) * 100 : 0"
+              [class.ps-progress-done]="ps.paidItems === ps.totalItems">
+            </div>
+          </div>
+          <div class="ps-progress-label">
+            {{ ps.paidItems }}/{{ ps.totalItems }} ítems pagados
+          </div>
+        </div>
+      }
+    }
+
     @for (group of month.expenseGroups; track group.id) {
       <app-expense-group [monthId]="monthId" [group]="group" [readonly]="month.isClosed" />
     }

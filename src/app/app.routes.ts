@@ -16,5 +16,10 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./features/template/template').then(m => m.TemplateComponent),
   },
+  {
+    path: 'history',
+    loadComponent: () =>
+      import('./features/history/history').then(m => m.History),
+  },
   { path: '**', redirectTo: '' },
 ];

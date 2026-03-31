@@ -2,7 +2,17 @@
   <mat-icon style="margin-right:8px">account_balance_wallet</mat-icon>
   <span style="font-weight:600;letter-spacing:0.5px">Mis Gastos</span>
   <span style="flex:1"></span>
-  <button mat-icon-button (click)="goToTemplate()">
+  <input #importInput type="file" accept=".json" style="display:none" (change)="importData($event)" />
+  <button mat-icon-button (click)="exportData()" matTooltip="Exportar backup JSON">
+    <mat-icon>download</mat-icon>
+  </button>
+  <button mat-icon-button (click)="importInput.click()" matTooltip="Importar backup JSON">
+    <mat-icon>upload</mat-icon>
+  </button>
+  <button mat-icon-button (click)="goToHistory()" matTooltip="Historial y gráficos">
+    <mat-icon>bar_chart</mat-icon>
+  </button>
+  <button mat-icon-button (click)="goToTemplate()" matTooltip="Plantilla">
     <mat-icon>tune</mat-icon>
   </button>
 </mat-toolbar>
@@ -85,6 +95,20 @@
           <span class="usd-label">USD a vender</span>
           <span class="usd-amount">{{ getTotalUSD(month) | number:'1.2-2':'es-AR' }} <small>USD</small></span>
         </div>
+        @let ps = getPaidSummary(month);
+        @if (ps.totalItems > 0) {
+          <div class="month-progress">
+            <div class="progress-track">
+              <div class="progress-fill"
+                [style.width.%]="ps.totalItems ? (ps.paidItems / ps.totalItems) * 100 : 0"
+                [class.progress-done]="ps.paidItems === ps.totalItems">
+              </div>
+            </div>
+            <span class="progress-label">
+              {{ ps.paidItems }}/{{ ps.totalItems }} pagados
+            </span>
+          </div>
+        }
       </div>
     </div>
   }

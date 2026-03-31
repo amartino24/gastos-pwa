@@ -1,0 +1,87 @@
+.paid-summary-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 14px 16px 10px;
+  margin-bottom: 12px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.07), 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.paid-summary-row {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  margin-bottom: 12px;
+}
+
+.paid-summary-divider {
+  width: 1px;
+  background: #f0f0f0;
+  margin: 0 16px;
+  flex-shrink: 0;
+}
+
+.paid-summary-item {
+  flex: 1;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+
+  .ps-icon {
+    font-size: 1.1rem;
+    margin-top: 2px;
+    flex-shrink: 0;
+  }
+
+  &.paid .ps-icon { color: #2e7d32; }
+  &.pending .ps-icon { color: #9e9e9e; }
+}
+
+.ps-label {
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: #9e9e9e;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  margin-bottom: 2px;
+}
+
+.ps-amount {
+  font-size: 1.05rem;
+  font-weight: 700;
+  line-height: 1.2;
+
+  .paid & { color: #2e7d32; }
+  .pending & { color: #5e35b1; }
+}
+
+.ps-count {
+  font-size: 0.75rem;
+  color: #bdbdbd;
+  margin-top: 1px;
+}
+
+.ps-progress-track {
+  height: 6px;
+  background: #f3e5f5;
+  border-radius: 99px;
+  overflow: hidden;
+  margin-bottom: 6px;
+}
+
+.ps-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #7b1fa2, #ce93d8);
+  border-radius: 99px;
+  transition: width 0.4s ease;
+
+  &.ps-progress-done {
+    background: linear-gradient(90deg, #2e7d32, #66bb6a);
+  }
+}
+
+.ps-progress-label {
+  text-align: right;
+  font-size: 0.72rem;
+  color: #9e9e9e;
+  font-weight: 500;
+}

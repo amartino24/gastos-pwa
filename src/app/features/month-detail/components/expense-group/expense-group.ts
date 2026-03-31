@@ -36,6 +36,18 @@ export class ExpenseGroupComponent {
     return this.group.items.reduce((s, i) => s + (i.amount || 0), 0);
   }
 
+  get paidCount(): number {
+    return this.group.items.filter(i => i.paid).length;
+  }
+
+  get paidAmount(): number {
+    return this.group.items.filter(i => i.paid).reduce((s, i) => s + (i.amount || 0), 0);
+  }
+
+  get paidPercent(): number {
+    return this.group.items.length ? (this.paidCount / this.group.items.length) * 100 : 0;
+  }
+
   updateItem(item: ExpenseItem, newAmount: string): void {
     const amount = parseFloat(newAmount) || 0;
     this.monthsService.updateExpenseItem(this.monthId, this.group.id, { ...item, amount });

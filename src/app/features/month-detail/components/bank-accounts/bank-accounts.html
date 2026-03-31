@@ -9,7 +9,27 @@
   <div class="bank-grid">
     @for (account of accounts; track account.id) {
       <div class="bank-item">
-        <span class="bank-name">{{ account.name }}</span>
+        <div class="bank-item-top">
+          <span class="bank-name">{{ account.name }}</span>
+          @if (!readonly) {
+            <div class="bank-item-actions">
+              <label class="upload-btn" [matTooltip]="account.statement ? 'Reemplazar resumen' : 'Subir resumen PDF'">
+                @if (parsing.has(account.id)) {
+                  <mat-spinner diameter="14" />
+                } @else {
+                  <mat-icon>upload_file</mat-icon>
+                }
+                <input type="file" accept=".pdf" style="display:none"
+                  (change)="uploadStatement(account, $event)" />
+              </label>
+              <button class="remove-account-btn" (click)="removeAccount(account.id)"
+                matTooltip="Eliminar cuenta">
+                <mat-icon>close</mat-icon>
+              </button>
+            </div>
+          }
+        </div>
+
         <div class="bank-amount-wrap">
           <span class="bank-prefix">$</span>
           <input class="bank-amount-input" type="number"
@@ -17,6 +37,19 @@
             (change)="update(account, $any($event.target).value)"
             [readonly]="readonly" min="0" />
         </div>
+
+        @if (account.statement) {
+          <div class="statement-badge">
+            <mat-icon>picture_as_pdf</mat-icon>
+            <span class="statement-name">{{ account.statement.filename }}</span>
+            @if (!readonly) {
+              <button class="statement-remove" (click)="removeStatement(account)"
+                matTooltip="Quitar resumen">
+                <mat-icon>close</mat-icon>
+              </button>
+            }
+          </div>
+        }
       </div>
     }
   </div>

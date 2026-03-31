@@ -1,8 +1,9 @@
 import { Injectable, signal, computed, inject } from '@angular/core';
-import { StorageService } from './storage';
+import { FirestoreService } from './firestore.service';
+import { DEFAULT_STATE } from './storage';
 import {
   AppState, MonthData, ExpenseItem, BankAccount,
-  Pocket, PocketSummary
+  Pocket, PocketSummary, PaidSummary
 } from '../models';
 
 function uuid(): string {
@@ -11,16 +12,29 @@ function uuid(): string {
 
 @Injectable({ providedIn: 'root' })
 export class MonthsService {
-  private storage = inject(StorageService);
-  private state = signal<AppState>(this.storage.load());
+  private firestore = inject(FirestoreService);
+  private state = signal<AppState>(structuredClone(DEFAULT_STATE));
+
+  loading = signal(true);
 
   months = computed(() => [...this.state().months].sort((a: MonthData, b: MonthData) => {
     if (a.year !== b.year) return b.year - a.year;
     return b.month - a.month;
   }));
 
+  async init(): Promise<void> {
+    try {
+      const state = await this.firestore.init();
+      this.state.set(state);
+    } catch (err) {
+      console.error('[MonthsService] init failed:', err);
+    } finally {
+      this.loading.set(false);
+    }
+  }
+
   private save(): void {
-    this.storage.save(this.state());
+    this.firestore.save(this.state());
   }
 
   getMonth(id: string): MonthData | undefined {
@@ -132,6 +146,17 @@ export class MonthsService {
     this.save();
   }
 
+  removeBankAccount(monthId: string, accountId: string): void {
+    this.state.update(s => ({
+      ...s,
+      months: s.months.map(m => {
+        if (m.id !== monthId) return m;
+        return { ...m, bankAccounts: m.bankAccounts.filter(b => b.id !== accountId) };
+      }),
+    }));
+    this.save();
+  }
+
   updateBankAccount(monthId: string, account: BankAccount): void {
     this.state.update(s => ({
       ...s,
@@ -186,6 +211,33 @@ export class MonthsService {
       months: s.months.filter(m => m.id !== monthId),
     }));
     this.save();
+  }
+
+  getState(): AppState {
+    return this.state();
+  }
+
+  loadState(newState: AppState): void {
+    this.state.set(newState);
+    this.save();
+  }
+
+  calcPaidSummary(month: MonthData): PaidSummary {
+    let totalItems = 0;
+    let paidItems = 0;
+    let totalARS = 0;
+    let paidARS = 0;
+    for (const group of month.expenseGroups) {
+      for (const item of group.items) {
+        totalItems++;
+        totalARS += item.amount || 0;
+        if (item.paid) {
+          paidItems++;
+          paidARS += item.amount || 0;
+        }
+      }
+    }
+    return { totalItems, paidItems, totalARS, paidARS, pendingARS: totalARS - paidARS };
   }
 
   calcSummary(month: MonthData): PocketSummary[] {

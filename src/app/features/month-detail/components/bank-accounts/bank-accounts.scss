@@ -52,6 +52,18 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
+  transition: border-color 0.2s;
+
+  &:has(.statement-badge) {
+    border-color: #ce93d8;
+    background: #fdf6ff;
+  }
+}
+
+.bank-item-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .bank-name {
@@ -60,6 +72,98 @@
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.4px;
+}
+
+.bank-item-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.upload-btn {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  color: #bdbdbd;
+  transition: color 0.2s;
+  padding: 2px;
+  border-radius: 4px;
+
+  mat-icon {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+  }
+
+  &:hover { color: #7b1fa2; }
+}
+
+.remove-account-btn {
+  background: none;
+  border: none;
+  padding: 2px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  color: #d5d5d5;
+  border-radius: 4px;
+  transition: color 0.15s;
+
+  mat-icon {
+    font-size: 14px;
+    width: 14px;
+    height: 14px;
+  }
+
+  &:hover { color: #e53935; }
+}
+
+.statement-badge {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: #f3e5f5;
+  border-radius: 6px;
+  padding: 3px 6px;
+  margin-top: 2px;
+
+  mat-icon {
+    font-size: 13px;
+    width: 13px;
+    height: 13px;
+    color: #7b1fa2;
+    flex-shrink: 0;
+  }
+}
+
+.statement-name {
+  font-size: 0.7rem;
+  color: #5e35b1;
+  font-weight: 500;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100px;
+}
+
+.statement-remove {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  color: #bdbdbd;
+  flex-shrink: 0;
+
+  mat-icon {
+    font-size: 12px;
+    width: 12px;
+    height: 12px;
+  }
+
+  &:hover { color: #e53935; }
 }
 
 .bank-amount-wrap {
