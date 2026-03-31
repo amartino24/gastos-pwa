@@ -5,6 +5,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatDialog } from '@angular/material/dialog';
 import { MatExpansionModule } from '@angular/material/expansion';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
@@ -18,7 +19,7 @@ import { ConfirmDialog } from '../../../../shared/components/confirm-dialog/conf
   imports: [
     CommonModule, FormsModule,
     MatCardModule, MatExpansionModule, MatButtonModule, MatIconModule,
-    MatFormFieldModule, MatInputModule,
+    MatFormFieldModule, MatInputModule, MatCheckboxModule,
   ],
   templateUrl: './expense-group.html',
   styleUrl: './expense-group.scss',
@@ -56,6 +57,10 @@ export class ExpenseGroupComponent {
         this.monthsService.addExpenseItem(this.monthId, this.group.id, result.name, result.amount ?? 0);
       }
     });
+  }
+
+  togglePaid(item: ExpenseItem): void {
+    this.monthsService.toggleItemPaid(this.monthId, this.group.id, item);
   }
 
   removeItem(itemId: string): void {

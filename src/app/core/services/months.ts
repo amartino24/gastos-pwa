@@ -78,6 +78,10 @@ export class MonthsService {
     this.save();
   }
 
+  toggleItemPaid(monthId: string, groupId: string, item: ExpenseItem): void {
+    this.updateExpenseItem(monthId, groupId, { ...item, paid: !item.paid });
+  }
+
   updateExpenseItem(monthId: string, groupId: string, item: ExpenseItem): void {
     this.state.update(s => ({
       ...s,

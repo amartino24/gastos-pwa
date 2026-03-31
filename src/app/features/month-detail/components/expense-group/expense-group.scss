@@ -3,6 +3,15 @@
   align-items: center;
   gap: 8px;
   padding: 4px 0;
+  transition: opacity 0.2s;
+}
+
+.item-paid {
+  opacity: 0.45;
+
+  .item-name-input {
+    text-decoration: line-through;
+  }
 }
 
 .item-name-input {

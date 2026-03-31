@@ -2,6 +2,7 @@ export interface ExpenseItem {
   id: string;
   name: string;
   amount: number;
+  paid?: boolean;
 }
 
 export interface ExpenseGroup {
