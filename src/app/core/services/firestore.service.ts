@@ -1,7 +1,7 @@
 import { Injectable, signal } from '@angular/core';
 import {
   onAuthStateChanged, signInWithRedirect, signOut,
-  getRedirectResult, User,
+  getRedirectResult, browserLocalPersistence, setPersistence, User,
 } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { firebaseAuth, firebaseDb, googleProvider } from './firebase';
@@ -53,8 +53,9 @@ export class FirestoreService {
   }
 
   // Uses redirect flow — works on all browsers including Safari iOS.
-  // Page navigates to Google and comes back; result is captured in next init().
+  // Sets localStorage persistence first to avoid Safari sessionStorage partitioning.
   async signInWithGoogle(): Promise<void> {
+    await setPersistence(firebaseAuth, browserLocalPersistence);
     await signInWithRedirect(firebaseAuth, googleProvider);
   }
 
