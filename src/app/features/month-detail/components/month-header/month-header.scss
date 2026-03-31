@@ -1,0 +1,55 @@
+.tc-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #fff;
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin-bottom: 12px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+}
+
+.tc-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #7b1fa2;
+  font-size: 0.875rem;
+  font-weight: 500;
+
+  mat-icon { font-size: 18px; width: 18px; height: 18px; }
+}
+
+.tc-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: #f3e5f5;
+  border-radius: 8px;
+  padding: 4px 10px;
+}
+
+.tc-prefix {
+  color: #7b1fa2;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.tc-input {
+  border: none;
+  background: transparent;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #5e35b1;
+  width: 90px;
+  text-align: right;
+  outline: none;
+
+  &::-webkit-inner-spin-button { display: none; }
+}
+
+.tc-suffix {
+  font-size: 0.75rem;
+  color: #9c27b0;
+  font-weight: 500;
+}

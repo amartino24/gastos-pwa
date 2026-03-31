@@ -1,19 +1,23 @@
-<mat-card style="margin-bottom:8px">
-  <mat-card-header>
-    <mat-card-title>Resúmenes bancarios</mat-card-title>
-    <mat-card-subtitle style="justify-content:flex-end;font-weight:500;margin-left:auto">
-      Total: ${{ total | number:'1.0-0':'es-AR' }}
-    </mat-card-subtitle>
-  </mat-card-header>
-  <mat-card-content style="padding-top:8px">
+<div class="bank-card">
+  <div class="bank-header">
+    <div class="bank-title">
+      <mat-icon>credit_card</mat-icon>
+      <span>Resúmenes bancarios</span>
+    </div>
+    <div class="bank-total">${{ total | number:'1.0-0':'es-AR' }}</div>
+  </div>
+  <div class="bank-grid">
     @for (account of accounts; track account.id) {
-      <mat-form-field appearance="outline" style="width:100%;margin-top:8px">
-        <mat-label>{{ account.name }}</mat-label>
-        <span matTextPrefix>$&nbsp;</span>
-        <input matInput type="number" [value]="account.total"
-          (change)="update(account, $any($event.target).value)"
-          [readonly]="readonly" min="0" />
-      </mat-form-field>
+      <div class="bank-item">
+        <span class="bank-name">{{ account.name }}</span>
+        <div class="bank-amount-wrap">
+          <span class="bank-prefix">$</span>
+          <input class="bank-amount-input" type="number"
+            [value]="account.total"
+            (change)="update(account, $any($event.target).value)"
+            [readonly]="readonly" min="0" />
+        </div>
+      </div>
     }
-  </mat-card-content>
-</mat-card>
+  </div>
+</div>

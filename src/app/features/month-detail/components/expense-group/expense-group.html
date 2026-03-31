@@ -1,40 +1,42 @@
-<mat-expansion-panel style="margin-bottom:8px">
+<mat-expansion-panel class="group-panel">
   <mat-expansion-panel-header>
-    <mat-panel-title>{{ group.name }}</mat-panel-title>
-    <mat-panel-description style="justify-content:flex-end;font-weight:500">
+    <mat-panel-title class="group-title">{{ group.name }}</mat-panel-title>
+    <mat-panel-description class="group-total">
       ${{ total | number:'1.0-0':'es-AR' }}
     </mat-panel-description>
   </mat-expansion-panel-header>
 
-  @for (item of group.items; track item.id) {
-    <div class="item-row" [class.item-paid]="item.paid">
-      <mat-checkbox [checked]="item.paid" (change)="togglePaid(item)" color="primary" />
-      <input class="item-name-input" [value]="item.name"
-        (blur)="updateItemName(item, $any($event.target).value)"
-        [readonly]="readonly" />
-      <mat-form-field appearance="outline" class="amount-field">
-        <span matTextPrefix>$&nbsp;</span>
-        <input matInput type="number" [value]="item.amount"
-          (change)="updateItem(item, $any($event.target).value)"
-          [readonly]="readonly" min="0" />
-      </mat-form-field>
-      @if (!readonly) {
-        <button mat-icon-button color="warn" (click)="removeItem(item.id)">
-          <mat-icon>close</mat-icon>
-        </button>
-      }
-    </div>
-  }
+  <div class="items-list">
+    @for (item of group.items; track item.id) {
+      <div class="item-row" [class.item-paid]="item.paid">
+        <mat-checkbox [checked]="item.paid" (change)="togglePaid(item)" color="primary" class="item-check" />
+        <input class="item-name-input" [value]="item.name"
+          (blur)="updateItemName(item, $any($event.target).value)"
+          [readonly]="readonly" />
+        <div class="item-amount-wrap">
+          <span class="item-prefix">$</span>
+          <input class="item-amount-input" type="number" [value]="item.amount"
+            (change)="updateItem(item, $any($event.target).value)"
+            [readonly]="readonly" min="0" />
+        </div>
+        @if (!readonly) {
+          <button mat-icon-button class="remove-btn" (click)="removeItem(item.id)">
+            <mat-icon>close</mat-icon>
+          </button>
+        }
+      </div>
+    }
+  </div>
 
   @if (!readonly) {
-    <div style="display:flex;justify-content:flex-end;padding:8px 0">
-      <button mat-button color="primary" (click)="addItem()">
-        <mat-icon>add</mat-icon> Agregar
+    <div class="add-row">
+      <button mat-button color="primary" (click)="addItem()" class="add-btn">
+        <mat-icon>add</mat-icon> Agregar gasto
       </button>
     </div>
   }
 
-  <mat-action-row>
-    <strong>Total: ${{ total | number:'1.0-0':'es-AR' }}</strong>
-  </mat-action-row>
+  <div class="group-footer">
+    Total: <strong>${{ total | number:'1.0-0':'es-AR' }}</strong>
+  </div>
 </mat-expansion-panel>

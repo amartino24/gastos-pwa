@@ -1,16 +1,12 @@
 import { Component, Input, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { MatCardModule } from '@angular/material/card';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
-import { MatTableModule } from '@angular/material/table';
-import { MatDividerModule } from '@angular/material/divider';
+import { MatIconModule } from '@angular/material/icon';
 import { MonthsService } from '../../../../core/services/months';
 import { PocketSummary, Pocket } from '../../../../core/models';
 
 @Component({
   selector: 'app-summary-table',
-  imports: [CommonModule, MatCardModule, MatFormFieldModule, MatInputModule, MatTableModule, MatDividerModule],
+  imports: [CommonModule, MatIconModule],
   templateUrl: './summary-table.html',
   styleUrl: './summary-table.scss',
 })
@@ -23,17 +19,26 @@ export class SummaryTableComponent {
 
   private monthsService = inject(MonthsService);
 
-  displayedColumns = ['name', 'gastos', 'sobrante', 'diferencia', 'paraUsar', 'usdNecesarios', 'arsNecesarios'];
+  // Track which input is focused to show raw number
+  focusedInput: string | null = null;
+
+  fmt(n: number): string {
+    return new Intl.NumberFormat('es-AR', { maximumFractionDigits: 0 }).format(n);
+  }
+
+  onFocus(inputId: string): void { this.focusedInput = inputId; }
+  onBlur(inputId: string): void { this.focusedInput = null; }
+  isFocused(inputId: string): boolean { return this.focusedInput === inputId; }
 
   updateSobrante(pocket: Pocket, value: string): void {
     if (!this.monthId) return;
-    const sobrante = parseFloat(value) || 0;
+    const sobrante = parseFloat(value.replace(/\./g, '').replace(',', '.')) || 0;
     this.monthsService.updatePocket(this.monthId, { ...pocket, sobrante });
   }
 
   updateParaUsar(pocket: Pocket, value: string): void {
     if (!this.monthId) return;
-    const paraUsar = parseFloat(value) || 0;
+    const paraUsar = parseFloat(value.replace(/\./g, '').replace(',', '.')) || 0;
     this.monthsService.updatePocket(this.monthId, { ...pocket, paraUsar });
   }
 }

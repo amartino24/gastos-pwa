@@ -1,15 +1,14 @@
 import { Component, Input, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { MatCardModule } from '@angular/material/card';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
+import { MatIconModule } from '@angular/material/icon';
 import { MonthsService } from '../../../../core/services/months';
 import { BankAccount } from '../../../../core/models';
 
 @Component({
   selector: 'app-bank-accounts',
-  imports: [CommonModule, MatCardModule, MatFormFieldModule, MatInputModule],
+  imports: [CommonModule, MatIconModule],
   templateUrl: './bank-accounts.html',
+  styleUrl: './bank-accounts.scss',
 })
 export class BankAccountsComponent {
   @Input({ required: true }) monthId!: string;

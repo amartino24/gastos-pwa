@@ -1,68 +1,77 @@
-<mat-card style="margin-top:16px">
-  <mat-card-header>
-    <mat-card-title>Resumen</mat-card-title>
-  </mat-card-header>
-  <mat-card-content>
+<div class="summary-wrap">
 
-    @for (row of summary; track row.pocket.id) {
-      <div class="summary-section">
-        <div class="section-title">{{ row.pocket.name }}</div>
+  @for (row of summary; track row.pocket.id) {
+    <div class="pocket-card">
+      <div class="pocket-name">{{ row.pocket.name }}</div>
 
-        <div class="summary-row">
-          <span>Gastos</span>
-          <strong>$ {{ row.totalGastos | number:'1.0-0':'es-AR' }}</strong>
+      <div class="rows">
+
+        <div class="row">
+          <span class="row-label">Gastos</span>
+          <span class="row-val">${{ fmt(row.totalGastos) }}</span>
         </div>
 
-        <div class="summary-row editable">
-          <span>Sobrante</span>
+        <div class="row editable-row">
+          <span class="row-label">Sobrante</span>
           @if (!readonly) {
-            <mat-form-field appearance="outline" class="inline-field">
-              <span matTextPrefix>$&nbsp;</span>
-              <input matInput type="number" [value]="row.pocket.sobrante"
-                (change)="updateSobrante(row.pocket, $any($event.target).value)" min="0" />
-            </mat-form-field>
+            <label class="editable-field">
+              <span class="field-prefix">$</span>
+              <input type="number"
+                [value]="row.pocket.sobrante"
+                (focus)="onFocus('s-' + row.pocket.id)"
+                (blur)="onBlur('s-' + row.pocket.id); updateSobrante(row.pocket, $any($event.target).value)"
+                (change)="updateSobrante(row.pocket, $any($event.target).value)"
+                min="0" />
+            </label>
           } @else {
-            <strong>$ {{ row.sobrante | number:'1.0-0':'es-AR' }}</strong>
+            <span class="row-val">${{ fmt(row.sobrante) }}</span>
           }
         </div>
 
-        <div class="summary-row">
-          <span>Diferencia</span>
-          <strong [class.amount-negative]="row.diferencia < 0" [class.amount-positive]="row.diferencia >= 0">
-            $ {{ row.diferencia | number:'1.0-0':'es-AR' }}
-            (USD {{ row.diferenciaUSD | number:'1.2-2':'es-AR' }})
-          </strong>
+        <div class="row">
+          <span class="row-label">Diferencia</span>
+          <span class="row-val" [class.neg]="row.diferencia < 0" [class.pos]="row.diferencia >= 0">
+            ${{ fmt(row.diferencia) }}
+          </span>
         </div>
 
-        <div class="summary-row editable">
-          <span>Para usar</span>
+        <div class="row editable-row">
+          <span class="row-label">Para usar</span>
           @if (!readonly) {
-            <mat-form-field appearance="outline" class="inline-field">
-              <span matTextPrefix>$&nbsp;</span>
-              <input matInput type="number" [value]="row.pocket.paraUsar"
-                (change)="updateParaUsar(row.pocket, $any($event.target).value)" min="0" />
-            </mat-form-field>
+            <label class="editable-field">
+              <span class="field-prefix">$</span>
+              <input type="number"
+                [value]="row.pocket.paraUsar"
+                (focus)="onFocus('p-' + row.pocket.id)"
+                (blur)="onBlur('p-' + row.pocket.id); updateParaUsar(row.pocket, $any($event.target).value)"
+                (change)="updateParaUsar(row.pocket, $any($event.target).value)"
+                min="0" />
+            </label>
           } @else {
-            <strong>$ {{ row.paraUsar | number:'1.0-0':'es-AR' }}</strong>
+            <span class="row-val">${{ fmt(row.paraUsar) }}</span>
           }
         </div>
 
-        <div class="summary-row highlight">
-          <span>ARS Necesarios</span>
-          <strong>$ {{ row.arsNecesarios | number:'1.0-0':'es-AR' }}</strong>
+      </div>
+
+      <div class="result-bar">
+        <div class="result-item">
+          <span class="result-label">ARS necesarios</span>
+          <span class="result-ars">${{ fmt(row.arsNecesarios) }}</span>
         </div>
-        <div class="summary-row highlight">
-          <span>USD a vender</span>
-          <strong class="usd-value">USD {{ row.usdNecesarios | number:'1.2-2':'es-AR' }}</strong>
+        <div class="result-divider"></div>
+        <div class="result-item">
+          <span class="result-label">USD a vender</span>
+          <span class="result-usd">{{ row.usdNecesarios | number:'1.2-2':'es-AR' }}<small> USD</small></span>
         </div>
       </div>
-      <mat-divider style="margin:8px 0" />
-    }
 
-    <div class="total-row">
-      <span>TOTAL USD a vender</span>
-      <strong class="usd-total">USD {{ totalUSD | number:'1.2-2':'es-AR' }}</strong>
     </div>
+  }
 
-  </mat-card-content>
-</mat-card>
+  <div class="total-bar">
+    <span class="total-label">Total USD a vender</span>
+    <span class="total-val">{{ totalUSD | number:'1.2-2':'es-AR' }}<small> USD</small></span>
+  </div>
+
+</div>

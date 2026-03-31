@@ -1,11 +1,15 @@
-<mat-card style="margin-bottom:16px">
-  <mat-card-content style="padding-top:16px">
-    <mat-form-field appearance="outline" style="width:100%">
-      <mat-label>Tipo de cambio (ARS/USD)</mat-label>
-      <span matTextPrefix>$&nbsp;</span>
-      <input matInput type="number" [value]="month.exchangeRate"
-        (change)="onRateChange($any($event.target).value)"
-        [readonly]="month.isClosed" min="1" />
-    </mat-form-field>
-  </mat-card-content>
-</mat-card>
+<div class="tc-bar">
+  <div class="tc-label">
+    <mat-icon>currency_exchange</mat-icon>
+    <span>Tipo de cambio</span>
+  </div>
+  <div class="tc-input-wrap">
+    <span class="tc-prefix">$</span>
+    <input class="tc-input" type="number"
+      [value]="month.exchangeRate"
+      (change)="onRateChange($any($event.target).value)"
+      [readonly]="month.isClosed"
+      min="1" />
+    <span class="tc-suffix">ARS/USD</span>
+  </div>
+</div>
