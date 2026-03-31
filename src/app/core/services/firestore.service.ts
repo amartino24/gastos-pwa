@@ -1,6 +1,6 @@
 import { Injectable, signal } from '@angular/core';
 import {
-  onAuthStateChanged, signInWithRedirect, signOut,
+  onAuthStateChanged, signInWithPopup, signInWithRedirect, signOut,
   getRedirectResult, browserLocalPersistence, setPersistence, User,
 } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
@@ -52,11 +52,36 @@ export class FirestoreService {
     });
   }
 
-  // Uses redirect flow — works on all browsers including Safari iOS.
-  // Sets localStorage persistence first to avoid Safari sessionStorage partitioning.
-  async signInWithGoogle(): Promise<void> {
+  // Desktop → popup (result immediate, no page reload needed).
+  // Mobile  → redirect (popups are unreliable on iOS/Android).
+  // Both set localStorage persistence to avoid Safari ITP sessionStorage issue.
+  async signInWithGoogle(): Promise<AppState> {
     await setPersistence(firebaseAuth, browserLocalPersistence);
-    await signInWithRedirect(firebaseAuth, googleProvider);
+
+    if (this.isMobile()) {
+      await signInWithRedirect(firebaseAuth, googleProvider);
+      return this.loadLocal(); // unreachable — page navigated away
+    }
+
+    try {
+      const result = await signInWithPopup(firebaseAuth, googleProvider);
+      this.uid = result.user.uid;
+      const state = await this.load(result.user);
+      this.authState.set('ready');
+      return state;
+    } catch (err: unknown) {
+      const code = (err as { code?: string }).code ?? '';
+      if (code === 'auth/popup-blocked' || code === 'auth/cancelled-popup-request') {
+        // Fallback to redirect if popup is blocked
+        await signInWithRedirect(firebaseAuth, googleProvider);
+        return this.loadLocal(); // unreachable
+      }
+      throw err;
+    }
+  }
+
+  private isMobile(): boolean {
+    return /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
   }
 
   async signOut(): Promise<void> {

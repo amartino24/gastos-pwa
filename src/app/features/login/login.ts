@@ -125,17 +125,18 @@ export class LoginComponent {
     this.loading.set(true);
     this.error.set('');
     try {
-      // signInWithRedirect navigates away — loading stays true (spinner shows)
-      // until Google redirects back and init() completes.
       await this.monthsService.signInWithGoogle();
+      // Desktop popup: reaches here after success — authState is already 'ready',
+      // app.ts switches to router-outlet and this component unmounts.
+      // Mobile redirect: never reaches here — page navigated away.
     } catch (err: unknown) {
-      // Only reaches here if the redirect itself fails to start
       const code = (err as { code?: string }).code ?? '';
       const msg = err instanceof Error ? err.message : String(err);
-      this.error.set(code || msg);
-      console.error('[Login]', err);
+      if (code !== 'auth/popup-closed-by-user' && !msg.includes('popup-closed')) {
+        this.error.set(code || msg);
+        console.error('[Login]', err);
+      }
       this.loading.set(false);
     }
-    // No finally reset — page will navigate away on success
   }
 }
