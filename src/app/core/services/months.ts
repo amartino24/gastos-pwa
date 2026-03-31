@@ -35,8 +35,9 @@ export class MonthsService {
   }
 
   async signInWithGoogle(): Promise<void> {
-    const state = await this.firestore.signInWithGoogle();
-    this.state.set(state);
+    // Initiates redirect to Google — page navigates away.
+    // On return, init() captures the result via getRedirectResult().
+    await this.firestore.signInWithGoogle();
   }
 
   async signOut(): Promise<void> {

@@ -1,5 +1,8 @@
 import { Injectable, signal } from '@angular/core';
-import { onAuthStateChanged, signInWithPopup, signOut, User } from 'firebase/auth';
+import {
+  onAuthStateChanged, signInWithRedirect, signOut,
+  getRedirectResult, User,
+} from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { firebaseAuth, firebaseDb, googleProvider } from './firebase';
 import { AppState } from '../models';
@@ -9,12 +12,25 @@ import { DEFAULT_STATE, STORAGE_KEY } from './storage';
 export class FirestoreService {
   private uid: string | null = null;
 
-  // null = checking auth, false = not signed in, true = signed in
+  // null = checking auth, 'unauthenticated' = needs login, 'ready' = data loaded
   authState = signal<'loading' | 'unauthenticated' | 'ready'>('loading');
 
-  // Called once at app startup. Resolves when auth state is known.
-  init(): Promise<AppState> {
-    return new Promise((resolve, reject) => {
+  async init(): Promise<AppState> {
+    // Check if we're coming back from a Google redirect (iOS Safari / any platform)
+    try {
+      const result = await getRedirectResult(firebaseAuth);
+      if (result?.user) {
+        this.uid = result.user.uid;
+        const state = await this.load(result.user);
+        this.authState.set('ready');
+        return state;
+      }
+    } catch (err) {
+      console.warn('[Firestore] getRedirectResult error:', err);
+    }
+
+    // Normal startup: check if already signed in
+    return new Promise(resolve => {
       const unsub = onAuthStateChanged(firebaseAuth, async user => {
         unsub();
         if (user) {
@@ -29,20 +45,17 @@ export class FirestoreService {
             resolve(this.loadLocal());
           }
         } else {
-          // Not signed in — app will show login screen
           this.authState.set('unauthenticated');
-          resolve(this.loadLocal()); // may return DEFAULT_STATE
+          resolve(this.loadLocal());
         }
       });
     });
   }
 
-  async signInWithGoogle(): Promise<AppState> {
-    const cred = await signInWithPopup(firebaseAuth, googleProvider);
-    this.uid = cred.user.uid;
-    const state = await this.load(cred.user);
-    this.authState.set('ready');
-    return state;
+  // Uses redirect flow — works on all browsers including Safari iOS.
+  // Page navigates to Google and comes back; result is captured in next init().
+  async signInWithGoogle(): Promise<void> {
+    await signInWithRedirect(firebaseAuth, googleProvider);
   }
 
   async signOut(): Promise<void> {
@@ -60,19 +73,19 @@ export class FirestoreService {
     const snap = await getDoc(ref);
 
     if (snap.exists()) {
-      console.log('[Firestore] ✅ Loaded from Firestore (', user.email ?? user.uid, ')');
+      console.log('[Firestore] ✅ Loaded for', user.email ?? user.uid);
       return snap.data() as AppState;
     }
 
-    // First login for this account — migrate localStorage if it has data
+    // First login — migrate localStorage data if present
     const local = this.loadLocal();
     if (local.months.length > 0) {
-      console.log('[Firestore] ⬆️ First login, migrating localStorage data...');
+      console.log('[Firestore] ⬆️ Migrating localStorage data...');
       setDoc(ref, JSON.parse(JSON.stringify(local)))
-        .then(() => console.log('[Firestore] ✅ Migration saved OK'))
+        .then(() => console.log('[Firestore] ✅ Migration OK'))
         .catch(err => console.error('[Firestore] ❌ Migration failed:', err));
     } else {
-      console.log('[Firestore] 🆕 First login, starting fresh (', user.email ?? user.uid, ')');
+      console.log('[Firestore] 🆕 New user, starting fresh');
     }
     return local;
   }

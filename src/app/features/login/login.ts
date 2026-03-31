@@ -125,17 +125,17 @@ export class LoginComponent {
     this.loading.set(true);
     this.error.set('');
     try {
+      // signInWithRedirect navigates away — loading stays true (spinner shows)
+      // until Google redirects back and init() completes.
       await this.monthsService.signInWithGoogle();
     } catch (err: unknown) {
-      const code = (err as {code?: string}).code ?? '';
+      // Only reaches here if the redirect itself fails to start
+      const code = (err as { code?: string }).code ?? '';
       const msg = err instanceof Error ? err.message : String(err);
-      if (!code.includes('popup-closed') && !msg.includes('popup-closed')) {
-        const detail = code || msg;
-        this.error.set(detail);
-        console.error('[Login]', err);
-      }
-    } finally {
+      this.error.set(code || msg);
+      console.error('[Login]', err);
       this.loading.set(false);
     }
+    // No finally reset — page will navigate away on success
   }
 }
