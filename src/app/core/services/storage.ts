@@ -143,9 +143,9 @@ export const DEFAULT_STATE: AppState = {
       { id: 'bank-mpago', name: 'Mercado Pago', total: 0 },
     ],
     pockets: [
-      { id: 'pocket-efectivo', name: 'Efectivo', groupIds: ['grp-efectivo'], isBanco: false },
-      { id: 'pocket-banco', name: 'Banco', groupIds: ['grp-otros'], isBanco: true },
-      { id: 'pocket-uala-mama', name: 'UALA + Mamá y Papá', groupIds: ['grp-uala', 'grp-gastos-mama'], isBanco: false },
+      { id: 'pocket-efectivo', name: 'Efectivo', groupIds: ['grp-efectivo'], isBanco: false, paraUsar: 100000 },
+      { id: 'pocket-banco', name: 'Banco', groupIds: ['grp-otros'], isBanco: true, paraUsar: 200000 },
+      { id: 'pocket-uala-mama', name: 'UALA + Mamá y Papá', groupIds: ['grp-uala', 'grp-gastos-mama'], isBanco: false, paraUsar: 94000 },
     ],
   },
 };

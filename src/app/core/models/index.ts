@@ -72,7 +72,7 @@ export interface MonthData {
 export interface Template {
   expenseGroups: ExpenseGroup[];
   bankAccounts: BankAccount[];
-  pockets: Omit<Pocket, 'sobrante' | 'paraUsar'>[];
+  pockets: Omit<Pocket, 'sobrante'>[];
 }
 
 export interface AppState {

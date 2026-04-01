@@ -25,6 +25,10 @@ export class TemplateService {
     this.months.removeTemplateItem(groupId, itemId);
   }
 
+  updateTemplatePocketParaUsar(pocketId: string, paraUsar: number): void {
+    this.months.updateTemplatePocketParaUsar(pocketId, paraUsar);
+  }
+
   updateTemplateBankAccount(_account: BankAccount): void {
     // not implemented yet
   }

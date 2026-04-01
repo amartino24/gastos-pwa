@@ -1,4 +1,4 @@
-import { Component, Input, inject } from '@angular/core';
+import { Component, computed, inject, input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -25,56 +25,49 @@ import { ConfirmDialog } from '../../../../shared/components/confirm-dialog/conf
   styleUrl: './expense-group.scss',
 })
 export class ExpenseGroupComponent {
-  @Input({ required: true }) monthId!: string;
-  @Input({ required: true }) group!: ExpenseGroup;
-  @Input() readonly = false;
+  // Signal inputs — reactive by default, no manual change detection needed
+  monthId = input.required<string>();
+  group   = input.required<ExpenseGroup>();
+  readonly = input(false);
 
   private monthsService = inject(MonthsService);
   private dialog = inject(MatDialog);
 
-  get total(): number {
-    return this.group.items.reduce((s, i) => s + (i.amount || 0), 0);
-  }
-
-  get paidCount(): number {
-    return this.group.items.filter(i => i.paid).length;
-  }
-
-  get paidAmount(): number {
-    return this.group.items.filter(i => i.paid).reduce((s, i) => s + (i.amount || 0), 0);
-  }
-
-  get paidPercent(): number {
-    return this.group.items.length ? (this.paidCount / this.group.items.length) * 100 : 0;
-  }
+  // Computed signals — auto-recompute when group() changes
+  total      = computed(() => this.group().items.reduce((s, i) => s + (i.amount || 0), 0));
+  paidCount  = computed(() => this.group().items.filter(i => i.paid).length);
+  paidPercent = computed(() => {
+    const items = this.group().items;
+    return items.length ? (this.paidCount() / items.length) * 100 : 0;
+  });
 
   updateItem(item: ExpenseItem, newAmount: string): void {
     const amount = parseFloat(newAmount) || 0;
-    item.amount = amount;
-    this.monthsService.updateExpenseItem(this.monthId, this.group.id, { ...item, amount });
+    // No direct mutation — let the signal state drive the UI
+    this.monthsService.updateExpenseItem(this.monthId(), this.group().id, { ...item, amount });
   }
 
   updateItemName(item: ExpenseItem, newName: string): void {
-    if (newName.trim()) {
-      item.name = newName.trim();
-      this.monthsService.updateExpenseItem(this.monthId, this.group.id, { ...item, name: newName.trim() });
+    const name = newName.trim();
+    if (name) {
+      this.monthsService.updateExpenseItem(this.monthId(), this.group().id, { ...item, name });
     }
   }
 
   addItem(): void {
     const ref = this.dialog.open(AddItemDialog, {
-      data: { title: `Agregar a ${this.group.name}` },
+      data: { title: `Agregar a ${this.group().name}` },
       width: '320px',
     });
     ref.afterClosed().subscribe(result => {
       if (result?.name) {
-        this.monthsService.addExpenseItem(this.monthId, this.group.id, result.name, result.amount ?? 0);
+        this.monthsService.addExpenseItem(this.monthId(), this.group().id, result.name, result.amount ?? 0);
       }
     });
   }
 
   togglePaid(item: ExpenseItem): void {
-    this.monthsService.toggleItemPaid(this.monthId, this.group.id, item);
+    this.monthsService.toggleItemPaid(this.monthId(), this.group().id, item);
   }
 
   removeItem(itemId: string): void {
@@ -82,7 +75,7 @@ export class ExpenseGroupComponent {
       data: { title: 'Eliminar ítem', message: '¿Eliminás este gasto?', confirmLabel: 'Eliminar' },
     });
     ref.afterClosed().subscribe(result => {
-      if (result) this.monthsService.removeExpenseItem(this.monthId, this.group.id, itemId);
+      if (result) this.monthsService.removeExpenseItem(this.monthId(), this.group().id, itemId);
     });
   }
 }

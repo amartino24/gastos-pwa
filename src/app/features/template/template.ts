@@ -74,6 +74,10 @@ export class TemplateComponent {
     });
   }
 
+  updatePocketParaUsar(pocketId: string, value: string): void {
+    this.templateService.updateTemplatePocketParaUsar(pocketId, parseFloat(value) || 0);
+  }
+
   updateBankAccount(account: BankAccount, value: string): void {
     // Bank account names can be renamed; amount in template is not used
   }

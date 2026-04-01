@@ -1,39 +1,39 @@
 <mat-expansion-panel class="group-panel">
   <mat-expansion-panel-header>
-    <mat-panel-title class="group-title">{{ group.name }}</mat-panel-title>
+    <mat-panel-title class="group-title">{{ group().name }}</mat-panel-title>
     <mat-panel-description class="group-total">
-      <span>${{ total | number:'1.0-0':'es-AR' }}</span>
-      @if (group.items.length) {
-        <span class="paid-chip" [class.paid-chip-done]="paidCount === group.items.length">
-          {{ paidCount }}/{{ group.items.length }}
+      <span>${{ total() | number:'1.0-0':'es-AR' }}</span>
+      @if (group().items.length) {
+        <span class="paid-chip" [class.paid-chip-done]="paidCount() === group().items.length">
+          {{ paidCount() }}/{{ group().items.length }}
         </span>
       }
     </mat-panel-description>
   </mat-expansion-panel-header>
 
-  @if (group.items.length) {
+  @if (group().items.length) {
     <div class="group-progress">
       <div class="group-progress-fill"
-        [style.width.%]="paidPercent"
-        [class.group-progress-done]="paidPercent === 100">
+        [style.width.%]="paidPercent()"
+        [class.group-progress-done]="paidPercent() === 100">
       </div>
     </div>
   }
 
   <div class="items-list">
-    @for (item of group.items; track item.id) {
+    @for (item of group().items; track item.id) {
       <div class="item-row" [class.item-paid]="item.paid">
         <mat-checkbox [checked]="item.paid" (change)="togglePaid(item)" color="primary" class="item-check" />
         <input class="item-name-input" [value]="item.name"
           (blur)="updateItemName(item, $any($event.target).value)"
-          [readonly]="readonly" />
+          [readonly]="readonly()" />
         <div class="item-amount-wrap">
           <span class="item-prefix">$</span>
           <input class="item-amount-input" type="number" [value]="item.amount"
             (change)="updateItem(item, $any($event.target).value)"
-            [readonly]="readonly" min="0" />
+            [readonly]="readonly()" min="0" />
         </div>
-        @if (!readonly) {
+        @if (!readonly()) {
           <button mat-icon-button class="remove-btn" (click)="removeItem(item.id)">
             <mat-icon>close</mat-icon>
           </button>
@@ -42,7 +42,7 @@
     }
   </div>
 
-  @if (!readonly) {
+  @if (!readonly()) {
     <div class="add-row">
       <button mat-button color="primary" (click)="addItem()" class="add-btn">
         <mat-icon>add</mat-icon> Agregar gasto
@@ -51,6 +51,6 @@
   }
 
   <div class="group-footer">
-    Total: <strong>${{ total | number:'1.0-0':'es-AR' }}</strong>
+    Total: <strong>${{ total() | number:'1.0-0':'es-AR' }}</strong>
   </div>
 </mat-expansion-panel>

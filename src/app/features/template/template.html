@@ -49,6 +49,25 @@
 
   <mat-card style="margin-top:8px">
     <mat-card-header>
+      <mat-card-title>Pockets</mat-card-title>
+    </mat-card-header>
+    <mat-card-content style="padding-top:8px">
+      @for (pocket of template().pockets; track pocket.id) {
+        <div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--mat-sys-outline-variant)">
+          <span style="flex:1;font-size:0.95rem">{{ pocket.name }}</span>
+          <mat-form-field appearance="outline" class="amount-field">
+            <mat-label>Para usar</mat-label>
+            <span matTextPrefix>$&nbsp;</span>
+            <input matInput type="number" [value]="pocket.paraUsar"
+              (change)="updatePocketParaUsar(pocket.id, $any($event.target).value)" min="0" />
+          </mat-form-field>
+        </div>
+      }
+    </mat-card-content>
+  </mat-card>
+
+  <mat-card style="margin-top:8px">
+    <mat-card-header>
       <mat-card-title>Cuentas bancarias</mat-card-title>
     </mat-card-header>
     <mat-card-content style="padding-top:8px">

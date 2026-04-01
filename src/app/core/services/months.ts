@@ -81,7 +81,6 @@ export class MonthsService {
         ...p,
         id: uuid(),
         sobrante: 0,
-        paraUsar: 0,
       })) as Pocket[],
       isClosed: false,
     };
@@ -281,6 +280,19 @@ export class MonthsService {
         ...s.template,
         expenseGroups: s.template.expenseGroups.map(g =>
           g.id === groupId ? { ...g, items: g.items.filter(i => i.id !== itemId) } : g
+        ),
+      },
+    }));
+    this.save();
+  }
+
+  updateTemplatePocketParaUsar(pocketId: string, paraUsar: number): void {
+    this.state.update(s => ({
+      ...s,
+      template: {
+        ...s.template,
+        pockets: s.template.pockets.map(p =>
+          p.id === pocketId ? { ...p, paraUsar } : p
         ),
       },
     }));
