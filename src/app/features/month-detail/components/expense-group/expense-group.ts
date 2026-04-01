@@ -50,11 +50,13 @@ export class ExpenseGroupComponent {
 
   updateItem(item: ExpenseItem, newAmount: string): void {
     const amount = parseFloat(newAmount) || 0;
+    item.amount = amount;
     this.monthsService.updateExpenseItem(this.monthId, this.group.id, { ...item, amount });
   }
 
   updateItemName(item: ExpenseItem, newName: string): void {
     if (newName.trim()) {
+      item.name = newName.trim();
       this.monthsService.updateExpenseItem(this.monthId, this.group.id, { ...item, name: newName.trim() });
     }
   }
