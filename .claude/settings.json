@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3 -c \"import json,sys; d=json.load\\(sys.stdin\\); proj=list\\(d[''''projects''''].values\\(\\)\\)[0]; print\\(json.dumps\\(proj.get\\(''''architect'''',{}\\).get\\(''''build'''',{}\\).get\\(''''options'''',{}\\), indent=2\\)\\)\")"
+    ]
+  }
+}

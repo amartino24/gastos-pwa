@@ -45,7 +45,7 @@ export const DEFAULT_STATE: AppState = {
         },
         {
           id: 'apr-grp-otros',
-          name: 'Otros',
+          name: 'Gastos banco',
           pocketId: 'apr-pocket-banco',
           items: [
             { id: 'apr-i11', name: 'Monotributo', amount: 70000 },
@@ -124,7 +124,7 @@ export const DEFAULT_STATE: AppState = {
       },
       {
         id: 'grp-otros',
-        name: 'Otros',
+        name: 'Gastos banco',
         pocketId: 'pocket-banco',
         items: [
           { id: 'i9', name: 'Monotributo', amount: 70000 },
