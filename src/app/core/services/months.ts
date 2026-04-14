@@ -320,6 +320,14 @@ export class MonthsService {
         }
       }
     }
+    for (const account of month.bankAccounts) {
+      totalItems++;
+      totalARS += account.total || 0;
+      if (account.paid) {
+        paidItems++;
+        paidARS += account.total || 0;
+      }
+    }
     return { totalItems, paidItems, totalARS, paidARS, pendingARS: totalARS - paidARS };
   }
 

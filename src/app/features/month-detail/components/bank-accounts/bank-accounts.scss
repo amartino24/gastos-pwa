@@ -60,10 +60,37 @@
   }
 }
 
+.bank-item-paid {
+  opacity: 0.6;
+
+  .bank-amount-input {
+    text-decoration: line-through;
+    color: #9e9e9e !important;
+  }
+}
+
 .bank-item-top {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.bank-name-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.bank-check {
+  ::ng-deep .mdc-checkbox {
+    padding: 0;
+    width: 16px;
+    height: 16px;
+  }
+  ::ng-deep .mdc-checkbox__background {
+    width: 14px;
+    height: 14px;
+  }
 }
 
 .bank-name {

@@ -8,9 +8,12 @@
   </div>
   <div class="bank-grid">
     @for (account of accounts; track account.id) {
-      <div class="bank-item">
+      <div class="bank-item" [class.bank-item-paid]="account.paid">
         <div class="bank-item-top">
-          <span class="bank-name">{{ account.name }}</span>
+          <div class="bank-name-row">
+            <mat-checkbox [checked]="account.paid" (change)="togglePaid(account)" color="primary" class="bank-check" />
+            <span class="bank-name">{{ account.name }}</span>
+          </div>
           @if (!readonly) {
             <div class="bank-item-actions">
               <label class="upload-btn" [matTooltip]="account.statement ? 'Reemplazar resumen' : 'Subir resumen PDF'">

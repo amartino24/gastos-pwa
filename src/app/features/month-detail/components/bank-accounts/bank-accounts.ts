@@ -1,6 +1,7 @@
 import { Component, Input, NgZone, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -15,7 +16,7 @@ import { StatementResultDialog } from './statement-result-dialog/statement-resul
   selector: 'app-bank-accounts',
   imports: [
     CommonModule,
-    MatIconModule, MatButtonModule, MatTooltipModule, MatProgressSpinnerModule,
+    MatIconModule, MatButtonModule, MatCheckboxModule, MatTooltipModule, MatProgressSpinnerModule,
     MatSnackBarModule,
   ],
   templateUrl: './bank-accounts.html',
@@ -125,6 +126,10 @@ export class BankAccountsComponent {
   removeStatement(account: BankAccount): void {
     const { statement: _, ...rest } = account;
     this.monthsService.updateBankAccount(this.monthId, rest as BankAccount);
+  }
+
+  togglePaid(account: BankAccount): void {
+    this.monthsService.updateBankAccount(this.monthId, { ...account, paid: !account.paid });
   }
 
   removeAccount(accountId: string): void {

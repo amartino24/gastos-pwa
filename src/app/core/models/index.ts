@@ -22,6 +22,7 @@ export interface BankAccount {
   id: string;
   name: string;
   total: number;
+  paid?: boolean;
   fechaCierre?: string;    // ISO date YYYY-MM-DD
   fechaVencimiento?: string; // ISO date YYYY-MM-DD
   statement?: BankAccountStatement;
