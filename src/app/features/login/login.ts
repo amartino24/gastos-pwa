@@ -1,118 +1,81 @@
-import { Component, inject, signal } from '@angular/core';
-import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MonthsService } from '../../core/services/months';
 
 @Component({
   selector: 'app-login',
-  imports: [MatButtonModule, MatIconModule, MatProgressSpinnerModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [MatProgressSpinnerModule],
   template: `
-    <div class="login-container">
-      <div class="login-card">
-        <div class="app-icon">
-          <mat-icon>account_balance_wallet</mat-icon>
+    <main class="login">
+      <div class="hero">
+        <div class="logo" aria-hidden="true">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="6" width="18" height="13" rx="3" /><path d="M3 10h18" /><path d="M16 14.5h2" />
+          </svg>
         </div>
-        <h1>Mis Gastos</h1>
-        <p class="subtitle">Ingresá con tu cuenta de Google para sincronizar tus datos entre dispositivos</p>
+        <h1>Tus gastos del mes, en orden.</h1>
+        <p class="lead">Cargá lo que pagás, marcá lo que ya salió y sabé cuántos dólares vender.</p>
+      </div>
 
+      <div class="actions">
         @if (error()) {
-          <div class="error-msg">{{ error() }}</div>
+          <div class="error-msg" role="alert">No pudimos iniciar sesión ({{ error() }}). Probá de nuevo.</div>
         }
-
-        <button mat-flat-button class="google-btn" (click)="signIn()" [disabled]="loading()">
+        <button type="button" class="google-btn" (click)="signIn()" [disabled]="loading()" [attr.aria-busy]="loading()">
           @if (loading()) {
             <mat-spinner diameter="20" />
           } @else {
-            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google" width="18" height="18" />
+            <svg width="20" height="20" viewBox="0 0 48 48" aria-hidden="true">
+              <path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9 3.6l6.7-6.7C35.6 2.4 30.2 0 24 0 14.6 0 6.6 5.4 2.7 13.3l7.8 6C12.4 13.6 17.7 9.5 24 9.5z"/>
+              <path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.6 3-2.3 5.5-4.8 7.2l7.5 5.8c4.4-4 7.1-10 7.1-17.5z"/>
+              <path fill="#FBBC05" d="M10.5 28.7c-.5-1.4-.8-3-.8-4.7s.3-3.2.8-4.7l-7.8-6C1 16.6 0 20.2 0 24s1 7.4 2.7 10.7l7.8-6z"/>
+              <path fill="#34A853" d="M24 48c6.5 0 11.9-2.1 15.9-5.8l-7.5-5.8c-2.1 1.4-4.8 2.3-8.4 2.3-6.3 0-11.6-4.1-13.5-9.8l-7.8 6C6.6 42.6 14.6 48 24 48z"/>
+            </svg>
           }
           Continuar con Google
         </button>
+        <p class="note">Tus datos se sincronizan entre dispositivos.</p>
       </div>
-    </div>
+    </main>
   `,
   styles: [`
-    .login-container {
-      height: 100dvh;
+    .login {
+      min-height: 100dvh;
+      max-width: 440px;
+      margin: 0 auto;
       display: flex;
-      align-items: center;
-      justify-content: center;
-      background: #f8fafc;
-      padding: 16px;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 32px;
+      padding: calc(72px + env(safe-area-inset-top)) 28px calc(32px + env(safe-area-inset-bottom));
+      background: var(--g-ground);
+      color: var(--g-ink);
     }
-
-    .login-card {
-      background: #fff;
-      border-radius: 20px;
-      padding: 40px 32px;
-      max-width: 360px;
-      width: 100%;
-      text-align: center;
-      box-shadow: 0 4px 24px rgba(0,0,0,.08);
+    .hero { display: flex; flex-direction: column; gap: 20px; }
+    .logo {
+      width: 56px; height: 56px; border-radius: 16px;
+      background: var(--g-accent);
+      display: flex; align-items: center; justify-content: center;
     }
-
-    .app-icon {
-      width: 64px;
-      height: 64px;
-      border-radius: 16px;
-      background: linear-gradient(135deg, #6366f1, #8b5cf6);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin: 0 auto 20px;
-
-      mat-icon {
-        font-size: 32px;
-        width: 32px;
-        height: 32px;
-        color: #fff;
-      }
-    }
-
-    h1 {
-      font-size: 1.6rem;
-      font-weight: 700;
-      color: #1e293b;
-      margin: 0 0 8px;
-    }
-
-    .subtitle {
-      font-size: 0.875rem;
-      color: #64748b;
-      line-height: 1.5;
-      margin: 0 0 28px;
-    }
-
+    h1 { margin: 0; font-size: 2.5rem; line-height: 1.05; font-weight: 700; letter-spacing: -1.2px; }
+    .lead { margin: 0; font-size: 1rem; line-height: 1.5; color: var(--g-ink-2); }
+    .actions { display: flex; flex-direction: column; gap: 14px; }
     .google-btn {
-      width: 100%;
-      height: 48px;
-      border-radius: 12px !important;
-      background: #fff !important;
-      color: #1e293b !important;
-      border: 1.5px solid #e2e8f0;
-      font-size: 0.95rem;
-      font-weight: 500;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-      box-shadow: 0 1px 4px rgba(0,0,0,.06);
-      transition: box-shadow 0.15s;
-
-      &:hover:not([disabled]) {
-        box-shadow: 0 2px 8px rgba(0,0,0,.12);
-        border-color: #cbd5e1;
-      }
+      height: 54px; border-radius: 14px;
+      border: 1px solid #D6D3CA; background: var(--g-surface); color: var(--g-ink);
+      font: 600 1rem var(--g-font);
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+      cursor: pointer;
+      transition: border-color .15s, background .15s;
+      &:hover:not([disabled]) { border-color: var(--g-ink-2); }
+      &:focus-visible { outline: 3px solid var(--g-accent); outline-offset: 2px; }
+      &[disabled] { cursor: progress; opacity: .7; }
     }
-
+    .note { margin: 0; text-align: center; font-size: .8125rem; color: var(--g-ink-2); }
     .error-msg {
-      background: #fef2f2;
-      color: #dc2626;
-      border-radius: 8px;
-      padding: 10px 14px;
-      font-size: 0.8rem;
-      margin-bottom: 16px;
-      text-align: left;
+      background: #FDECEA; color: #8C1D18;
+      border-radius: 12px; padding: 12px 14px; font-size: .875rem;
     }
   `],
 })

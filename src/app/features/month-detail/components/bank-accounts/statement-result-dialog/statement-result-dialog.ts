@@ -74,37 +74,37 @@ export interface StatementResultData {
       font-size: 32px;
       width: 32px;
       height: 32px;
-      color: #7b1fa2;
+      color: #174F3D;
     }
     .dialog-title {
       font-weight: 600;
       font-size: 1rem;
-      color: #212121;
+      color: #16181D;
     }
     .dialog-subtitle {
       font-size: 0.8rem;
-      color: #9e9e9e;
+      color: #6B6F77;
       margin-top: 2px;
     }
     .filename-row {
       display: flex;
       align-items: center;
       gap: 6px;
-      background: #f3e5f5;
+      background: #E3F1EA;
       border-radius: 8px;
       padding: 8px 12px;
       margin-bottom: 16px;
-      mat-icon { font-size: 16px; width: 16px; height: 16px; color: #7b1fa2; }
+      mat-icon { font-size: 16px; width: 16px; height: 16px; color: #174F3D; }
     }
     .filename {
       font-size: 0.8rem;
-      color: #5e35b1;
+      color: #1F6F54;
       font-weight: 500;
       word-break: break-all;
     }
     .found-label {
       font-size: 0.75rem;
-      color: #9e9e9e;
+      color: #6B6F77;
       font-weight: 500;
       text-transform: uppercase;
       letter-spacing: 0.4px;
@@ -115,9 +115,9 @@ export interface StatementResultData {
       flex-direction: column;
       align-items: center;
       text-align: center;
-      color: #9e9e9e;
+      color: #6B6F77;
       padding: 8px 0 12px;
-      mat-icon { font-size: 32px; width: 32px; height: 32px; color: #bdbdbd; margin-bottom: 4px; }
+      mat-icon { font-size: 32px; width: 32px; height: 32px; color: #A8A69F; margin-bottom: 4px; }
       p { font-size: 0.85rem; margin: 0; line-height: 1.5; }
     }
   `],

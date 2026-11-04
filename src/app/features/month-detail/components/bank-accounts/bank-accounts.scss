@@ -19,21 +19,21 @@
   gap: 6px;
   font-weight: 600;
   font-size: 0.9rem;
-  color: #424242;
+  color: #3A3D44;
 
   mat-icon {
     font-size: 18px;
     width: 18px;
     height: 18px;
-    color: #7b1fa2;
+    color: #174F3D;
   }
 }
 
 .bank-total {
   font-weight: 700;
   font-size: 0.95rem;
-  color: #5e35b1;
-  background: #f3e5f5;
+  color: #1F6F54;
+  background: #E3F1EA;
   padding: 3px 10px;
   border-radius: 8px;
 }
@@ -55,8 +55,8 @@
   transition: border-color 0.2s;
 
   &:has(.statement-badge) {
-    border-color: #ce93d8;
-    background: #fdf6ff;
+    border-color: #9FCDB8;
+    background: #F6F5F1;
   }
 }
 
@@ -65,7 +65,7 @@
 
   .bank-amount-input {
     text-decoration: line-through;
-    color: #9e9e9e !important;
+    color: #6B6F77 !important;
   }
 }
 
@@ -95,7 +95,7 @@
 
 .bank-name {
   font-size: 0.78rem;
-  color: #9e9e9e;
+  color: #6B6F77;
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.4px;
@@ -111,7 +111,7 @@
   cursor: pointer;
   display: flex;
   align-items: center;
-  color: #bdbdbd;
+  color: #A8A69F;
   transition: color 0.2s;
   padding: 2px;
   border-radius: 4px;
@@ -122,7 +122,7 @@
     height: 16px;
   }
 
-  &:hover { color: #7b1fa2; }
+  &:hover { color: #174F3D; }
 }
 
 .remove-account-btn {
@@ -149,7 +149,7 @@
   display: flex;
   align-items: center;
   gap: 4px;
-  background: #f3e5f5;
+  background: #E3F1EA;
   border-radius: 6px;
   padding: 3px 6px;
   margin-top: 2px;
@@ -158,14 +158,14 @@
     font-size: 13px;
     width: 13px;
     height: 13px;
-    color: #7b1fa2;
+    color: #174F3D;
     flex-shrink: 0;
   }
 }
 
 .statement-name {
   font-size: 0.7rem;
-  color: #5e35b1;
+  color: #1F6F54;
   font-weight: 500;
   flex: 1;
   white-space: nowrap;
@@ -181,7 +181,7 @@
   cursor: pointer;
   display: flex;
   align-items: center;
-  color: #bdbdbd;
+  color: #A8A69F;
   flex-shrink: 0;
 
   mat-icon {
@@ -208,7 +208,7 @@
 
 .date-label {
   font-size: 0.65rem;
-  color: #bdbdbd;
+  color: #A8A69F;
   text-transform: uppercase;
   letter-spacing: 0.4px;
 }
@@ -218,19 +218,19 @@
   border-bottom: 1px solid #e0e0e0;
   background: transparent;
   font-size: 0.75rem;
-  color: #424242;
+  color: #3A3D44;
   padding: 1px 0;
   outline: none;
   width: 100%;
   cursor: pointer;
 
-  &:focus { border-bottom-color: #7b1fa2; color: #5e35b1; }
+  &:focus { border-bottom-color: #174F3D; color: #1F6F54; }
   &::-webkit-calendar-picker-indicator { opacity: 0.4; width: 12px; cursor: pointer; }
 }
 
 .date-value {
   font-size: 0.78rem;
-  color: #424242;
+  color: #3A3D44;
   font-weight: 500;
 }
 
@@ -246,7 +246,7 @@
   border-radius: 6px;
   width: fit-content;
 
-  &.days-ok      { background: #e8f5e9; color: #2e7d32; }
+  &.days-ok      { background: #E3F1EA; color: #1F6F54; }
   &.days-soon    { background: #fff8e1; color: #f57f17; }
   &.days-urgent  { background: #fff3e0; color: #e65100; }
   &.days-overdue { background: #ffebee; color: #c62828; }
@@ -260,7 +260,7 @@
 
 .bank-prefix {
   font-size: 0.8rem;
-  color: #757575;
+  color: #5A5E66;
   font-weight: 500;
 }
 
@@ -269,10 +269,10 @@
   background: transparent;
   font-size: 1rem;
   font-weight: 700;
-  color: #212121;
+  color: #16181D;
   width: 100%;
   outline: none;
 
   &::-webkit-inner-spin-button { display: none; }
-  &:not([readonly]):focus { color: #5e35b1; border-bottom: 1.5px solid #7b1fa2; }
+  &:not([readonly]):focus { color: #1F6F54; border-bottom: 1.5px solid #174F3D; }
 }

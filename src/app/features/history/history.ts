@@ -23,7 +23,7 @@ Chart.register(
   BarController, LineController, DoughnutController,
 );
 
-const COLORS = ['#6366f1','#22c55e','#f59e0b','#06b6d4','#f43f5e','#8b5cf6','#10b981','#f97316'];
+const COLORS = ['#1F6F54','#22c55e','#f59e0b','#06b6d4','#f43f5e','#2B8A68','#10b981','#f97316'];
 
 @Component({
   selector: 'app-history',

@@ -1,7 +1,7 @@
 import { Injectable, signal } from '@angular/core';
 import {
   onAuthStateChanged, signInWithPopup, signInWithRedirect, signOut,
-  getRedirectResult, browserLocalPersistence, setPersistence, User,
+  getRedirectResult, User,
 } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { firebaseAuth, firebaseDb, googleProvider } from './firebase';
@@ -52,13 +52,13 @@ export class FirestoreService {
     });
   }
 
-  // Desktop → popup (result immediate, no page reload needed).
-  // Mobile  → redirect (popups are unreliable on iOS/Android).
-  // Both set localStorage persistence to avoid Safari ITP sessionStorage issue.
+  // Popup everywhere except Android (Chrome Android got stuck on popup).
+  // iOS needs popup: in standalone PWA mode a redirect leaves the app and
+  // returns inside an in-app browser with separate storage.
+  // IMPORTANT: no `await` before signInWithPopup — iOS only allows the popup
+  // if window.open runs synchronously inside the tap handler.
   async signInWithGoogle(): Promise<AppState> {
-    await setPersistence(firebaseAuth, browserLocalPersistence);
-
-    if (this.isMobile()) {
+    if (this.isAndroid()) {
       await signInWithRedirect(firebaseAuth, googleProvider);
       return this.loadLocal(); // unreachable — page navigated away
     }
@@ -71,8 +71,7 @@ export class FirestoreService {
       return state;
     } catch (err: unknown) {
       const code = (err as { code?: string }).code ?? '';
-      if (code === 'auth/popup-blocked' || code === 'auth/cancelled-popup-request') {
-        // Fallback to redirect if popup is blocked
+      if (code === 'auth/popup-blocked' || code === 'auth/operation-not-supported-in-this-environment') {
         await signInWithRedirect(firebaseAuth, googleProvider);
         return this.loadLocal(); // unreachable
       }
@@ -80,8 +79,8 @@ export class FirestoreService {
     }
   }
 
-  private isMobile(): boolean {
-    return /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+  private isAndroid(): boolean {
+    return /Android/i.test(navigator.userAgent);
   }
 
   async signOut(): Promise<void> {

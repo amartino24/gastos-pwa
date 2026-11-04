@@ -1,24 +1,43 @@
 @use '@angular/material' as mat;
 
+// ─── Design tokens (see Claude Design canvas "Mis Gastos — Rediseño") ──
+:root {
+  --g-ground: #F6F5F1;
+  --g-surface: #FFFFFF;
+  --g-ink: #16181D;
+  --g-ink-2: #5A5E66;
+  --g-line: #E4E2DB;
+  --g-line-soft: #ECEAE3;
+  --g-accent: #1F6F54;
+  --g-accent-strong: #174F3D;
+  --g-accent-soft: #E3F1EA;
+  --g-warn: #9A4A06;
+  --g-warn-soft: #FBEBDD;
+  --g-font: Geist, system-ui, -apple-system, sans-serif;
+  --g-mono: 'Geist Mono', ui-monospace, monospace;
+}
+
 html {
   height: 100%;
   @include mat.theme((
     color: (
-      primary: mat.$violet-palette,
-      tertiary: mat.$cyan-palette,
+      primary: mat.$green-palette,
+      tertiary: mat.$orange-palette,
     ),
-    typography: Roboto,
+    typography: (plain-family: Geist, brand-family: Geist),
     density: -1,
   ));
 }
 
 body {
   color-scheme: light;
-  background-color: #f0f2f5;
-  color: var(--mat-sys-on-surface);
-  font-family: Roboto, sans-serif;
+  background-color: var(--g-ground);
+  color: var(--g-ink);
+  font-family: var(--g-font);
+  -webkit-font-smoothing: antialiased;
   margin: 0;
   height: 100%;
+  font-variant-numeric: tabular-nums;
 }
 
 * { box-sizing: border-box; }
@@ -27,71 +46,84 @@ body {
 .page-container {
   max-width: 680px;
   margin: 0 auto;
-  padding: 20px 16px 80px;
+  padding: 16px 16px calc(80px + env(safe-area-inset-bottom));
 }
 
 @media (max-width: 600px) {
-  .page-container { padding: 12px 10px 80px; }
+  .page-container { padding: 8px 12px calc(80px + env(safe-area-inset-bottom)); }
 }
 
-// ─── Toolbar ──────────────────────────────────────────────
+// ─── Toolbar: flat, on ground, ink text ───────────────────
 .mat-toolbar {
-  background: linear-gradient(135deg, #5e35b1 0%, #7b1fa2 100%) !important;
-  color: #fff !important;
-  box-shadow: 0 2px 8px rgba(94,53,177,0.35) !important;
+  background: var(--g-ground) !important;
+  color: var(--g-ink) !important;
+  box-shadow: none !important;
+  padding-top: env(safe-area-inset-top) !important;
+  height: calc(64px + env(safe-area-inset-top)) !important;
+  font-family: var(--g-font) !important;
+  font-weight: 700 !important;
+  letter-spacing: -0.3px;
+  position: sticky;
+  top: 0;
+  z-index: 10;
 
-  .mat-icon-button, button[mat-icon-button] {
-    color: rgba(255,255,255,0.9) !important;
+  .mat-icon-button, button[mat-icon-button], .mat-mdc-icon-button {
+    color: var(--g-ink) !important;
   }
 }
 
 // ─── Cards ────────────────────────────────────────────────
 mat-card, .mat-mdc-card {
-  border-radius: 14px !important;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.06) !important;
-  background: #fff !important;
+  border-radius: 20px !important;
+  border: 1px solid var(--g-line);
+  box-shadow: none !important;
+  background: var(--g-surface) !important;
   margin-bottom: 12px;
 }
 
 // ─── Expansion panels ─────────────────────────────────────
-mat-expansion-panel {
-  border-radius: 14px !important;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.08) !important;
-  background: #fff !important;
-  margin-bottom: 8px;
+mat-expansion-panel, .mat-expansion-panel {
+  border-radius: 20px !important;
+  border: 1px solid var(--g-line);
+  box-shadow: none !important;
+  background: var(--g-surface) !important;
+  margin-bottom: 12px !important;
   overflow: hidden;
 }
 
 .mat-expansion-panel-header {
   padding: 0 16px !important;
-  height: 56px !important;
+  height: 60px !important;
+}
+
+// ─── Buttons ──────────────────────────────────────────────
+.mat-mdc-unelevated-button, .mat-mdc-raised-button, .mat-mdc-button, .mat-mdc-outlined-button {
+  border-radius: 14px !important;
+  font-family: var(--g-font) !important;
+  font-weight: 600 !important;
 }
 
 // ─── Amount colors ─────────────────────────────────────────
-.amount-positive { color: #2e7d32; font-weight: 600; }
-.amount-negative { color: #c62828; font-weight: 600; }
+.amount-positive { color: var(--g-accent); font-weight: 600; }
+.amount-negative { color: #B3261E; font-weight: 600; }
 
 // ─── Chips ────────────────────────────────────────────────
-.chip-open {
-  background: #e8f5e9 !important;
-  color: #2e7d32 !important;
+.chip-open, .chip-closed {
   font-size: 0.75rem;
   font-weight: 600;
-  padding: 2px 10px;
+  padding: 3px 10px;
   border-radius: 20px;
   display: inline-flex;
   align-items: center;
   gap: 4px;
 }
 
+.chip-open {
+  background: var(--g-accent-soft) !important;
+  color: var(--g-accent) !important;
+}
+
 .chip-closed {
-  background: #ede7f6 !important;
-  color: #5e35b1 !important;
-  font-size: 0.75rem;
-  font-weight: 600;
-  padding: 2px 10px;
-  border-radius: 20px;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
+  background: var(--g-line-soft) !important;
+  color: var(--g-ink-2) !important;
 }

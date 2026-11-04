@@ -32,14 +32,14 @@
     flex-shrink: 0;
   }
 
-  &.paid .ps-icon { color: #2e7d32; }
-  &.pending .ps-icon { color: #9e9e9e; }
+  &.paid .ps-icon { color: #1F6F54; }
+  &.pending .ps-icon { color: #6B6F77; }
 }
 
 .ps-label {
   font-size: 0.72rem;
   font-weight: 500;
-  color: #9e9e9e;
+  color: #6B6F77;
   text-transform: uppercase;
   letter-spacing: 0.4px;
   margin-bottom: 2px;
@@ -50,19 +50,19 @@
   font-weight: 700;
   line-height: 1.2;
 
-  .paid & { color: #2e7d32; }
-  .pending & { color: #5e35b1; }
+  .paid & { color: #1F6F54; }
+  .pending & { color: #1F6F54; }
 }
 
 .ps-count {
   font-size: 0.75rem;
-  color: #bdbdbd;
+  color: #A8A69F;
   margin-top: 1px;
 }
 
 .ps-progress-track {
   height: 6px;
-  background: #f3e5f5;
+  background: #E3F1EA;
   border-radius: 99px;
   overflow: hidden;
   margin-bottom: 6px;
@@ -70,18 +70,18 @@
 
 .ps-progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, #7b1fa2, #ce93d8);
+  background: #1F6F54;
   border-radius: 99px;
   transition: width 0.4s ease;
 
   &.ps-progress-done {
-    background: linear-gradient(90deg, #2e7d32, #66bb6a);
+    background: #2B8A68;
   }
 }
 
 .ps-progress-label {
   text-align: right;
   font-size: 0.72rem;
-  color: #9e9e9e;
+  color: #6B6F77;
   font-weight: 500;
 }
