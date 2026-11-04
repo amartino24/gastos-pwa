@@ -1,4 +1,5 @@
 import { Component, Input, NgZone, inject } from '@angular/core';
+import { UsdPipe } from '../../../../shared/pipes/usd.pipe';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
@@ -17,7 +18,7 @@ import { StatementResultDialog } from './statement-result-dialog/statement-resul
   imports: [
     CommonModule,
     MatIconModule, MatButtonModule, MatCheckboxModule, MatTooltipModule, MatProgressSpinnerModule,
-    MatSnackBarModule,
+    MatSnackBarModule, UsdPipe,
   ],
   templateUrl: './bank-accounts.html',
   styleUrl: './bank-accounts.scss',
@@ -26,6 +27,7 @@ export class BankAccountsComponent {
   @Input({ required: true }) monthId!: string;
   @Input({ required: true }) accounts!: BankAccount[];
   @Input() readonly = false;
+  @Input() exchangeRate = 0;
 
   private monthsService = inject(MonthsService);
   private parser = inject(StatementParserService);

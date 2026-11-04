@@ -13,13 +13,14 @@ import { MonthsService } from '../../../../core/services/months';
 import { ExpenseGroup, ExpenseItem } from '../../../../core/models';
 import { AddItemDialog } from '../../../../shared/components/add-item-dialog/add-item-dialog';
 import { ConfirmDialog } from '../../../../shared/components/confirm-dialog/confirm-dialog';
+import { UsdPipe } from '../../../../shared/pipes/usd.pipe';
 
 @Component({
   selector: 'app-expense-group',
   imports: [
     CommonModule, FormsModule,
     MatCardModule, MatExpansionModule, MatButtonModule, MatIconModule,
-    MatFormFieldModule, MatInputModule, MatCheckboxModule,
+    MatFormFieldModule, MatInputModule, MatCheckboxModule, UsdPipe,
   ],
   templateUrl: './expense-group.html',
   styleUrl: './expense-group.scss',
@@ -29,6 +30,7 @@ export class ExpenseGroupComponent {
   monthId = input.required<string>();
   group   = input.required<ExpenseGroup>();
   readonly = input(false);
+  exchangeRate = input(0);
 
   private monthsService = inject(MonthsService);
   private dialog = inject(MatDialog);

@@ -2,7 +2,12 @@
   <mat-expansion-panel-header>
     <mat-panel-title class="group-title">{{ group().name }}</mat-panel-title>
     <mat-panel-description class="group-total">
-      <span>${{ total() | number:'1.0-0':'es-AR' }}</span>
+      <span class="total-col">
+        <span>${{ total() | number:'1.0-0':'es-AR' }}</span>
+        @if (total() | usd: exchangeRate(); as usd) {
+          <span class="usd-hint">US$ {{ usd | number:'1.2-2':'es-AR' }}</span>
+        }
+      </span>
       @if (group().items.length) {
         <span class="paid-chip" [class.paid-chip-done]="paidCount() === group().items.length">
           {{ paidCount() }}/{{ group().items.length }}
@@ -27,11 +32,16 @@
         <input class="item-name-input" [value]="item.name"
           (blur)="updateItemName(item, $any($event.target).value)"
           [readonly]="readonly()" />
-        <div class="item-amount-wrap">
-          <span class="item-prefix">$</span>
-          <input class="item-amount-input" type="number" [value]="item.amount"
-            (change)="updateItem(item, $any($event.target).value)"
-            [readonly]="readonly()" min="0" />
+        <div class="item-amount-col">
+          <div class="item-amount-wrap">
+            <span class="item-prefix">$</span>
+            <input class="item-amount-input" type="number" [value]="item.amount"
+              (change)="updateItem(item, $any($event.target).value)"
+              [readonly]="readonly()" min="0" />
+          </div>
+          @if (item.amount | usd: exchangeRate(); as usd) {
+            <span class="usd-hint">US$ {{ usd | number:'1.2-2':'es-AR' }}</span>
+          }
         </div>
         @if (!readonly()) {
           <button mat-icon-button class="remove-btn" (click)="removeItem(item.id)">

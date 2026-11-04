@@ -4,7 +4,12 @@
       <mat-icon>credit_card</mat-icon>
       <span>Resúmenes bancarios</span>
     </div>
-    <div class="bank-total">${{ total | number:'1.0-0':'es-AR' }}</div>
+    <div class="bank-total">
+      ${{ total | number:'1.0-0':'es-AR' }}
+      @if (total | usd: exchangeRate; as usd) {
+        <span class="usd-hint">· US$ {{ usd | number:'1.2-2':'es-AR' }}</span>
+      }
+    </div>
   </div>
   <div class="bank-grid">
     @for (account of accounts; track account.id) {
@@ -40,6 +45,9 @@
             (change)="update(account, $any($event.target).value)"
             [readonly]="readonly" min="0" />
         </div>
+        @if (account.total | usd: exchangeRate; as usd) {
+          <span class="usd-hint">US$ {{ usd | number:'1.2-2':'es-AR' }}</span>
+        }
 
         @if (account.statement) {
           <div class="statement-badge">

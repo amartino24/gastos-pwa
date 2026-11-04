@@ -276,3 +276,10 @@
   &::-webkit-inner-spin-button { display: none; }
   &:not([readonly]):focus { color: #1F6F54; border-bottom: 1.5px solid #174F3D; }
 }
+
+.usd-hint {
+  font-family: var(--g-mono);
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--g-ink-2);
+}

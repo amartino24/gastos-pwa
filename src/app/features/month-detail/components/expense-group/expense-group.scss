@@ -146,3 +146,21 @@
 
   strong { color: #1F6F54; }
 }
+
+.item-amount-col, .total-col {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 1px;
+  flex-shrink: 0;
+}
+
+.usd-hint {
+  font-family: var(--g-mono);
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--g-ink-2);
+  padding-right: 8px;
+}
+
+.total-col .usd-hint { padding-right: 0; }

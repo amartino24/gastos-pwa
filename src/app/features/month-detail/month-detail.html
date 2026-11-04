@@ -57,10 +57,10 @@
     }
 
     @for (group of month.expenseGroups; track group.id) {
-      <app-expense-group [monthId]="monthId" [group]="group" [readonly]="month.isClosed" />
+      <app-expense-group [monthId]="monthId" [group]="group" [readonly]="month.isClosed" [exchangeRate]="month.exchangeRate" />
     }
 
-    <app-bank-accounts [monthId]="monthId" [accounts]="month.bankAccounts" [readonly]="month.isClosed" />
+    <app-bank-accounts [monthId]="monthId" [accounts]="month.bankAccounts" [readonly]="month.isClosed" [exchangeRate]="month.exchangeRate" />
 
     <app-summary-table [summary]="summary()" [exchangeRate]="month.exchangeRate" [totalUSD]="totalUSD()"
       [monthId]="monthId" [readonly]="month.isClosed" />
