@@ -156,8 +156,8 @@
 }
 
 .usd-hint {
-  font-family: var(--g-mono);
   font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
   font-weight: 500;
   color: var(--g-ink-2);
   padding-right: 8px;

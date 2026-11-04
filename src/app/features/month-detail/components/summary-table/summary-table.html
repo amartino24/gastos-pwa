@@ -16,12 +16,12 @@
           @if (!readonly) {
             <label class="editable-field">
               <span class="field-prefix">$</span>
-              <input type="number"
-                [value]="row.pocket.sobrante"
+              <input type="text" inputmode="numeric" aria-label="Sobrante"
+                [value]="fmt(row.pocket.sobrante)"
                 (focus)="onFocus('s-' + row.pocket.id)"
                 (blur)="onBlur('s-' + row.pocket.id); updateSobrante(row.pocket, $any($event.target).value)"
                 (change)="updateSobrante(row.pocket, $any($event.target).value)"
-                min="0" />
+                />
             </label>
           } @else {
             <span class="row-val">${{ fmt(row.sobrante) }}</span>
@@ -40,12 +40,12 @@
           @if (!readonly) {
             <label class="editable-field">
               <span class="field-prefix">$</span>
-              <input type="number"
-                [value]="row.pocket.paraUsar"
+              <input type="text" inputmode="numeric" aria-label="Para usar"
+                [value]="fmt(row.pocket.paraUsar)"
                 (focus)="onFocus('p-' + row.pocket.id)"
                 (blur)="onBlur('p-' + row.pocket.id); updateParaUsar(row.pocket, $any($event.target).value)"
                 (change)="updateParaUsar(row.pocket, $any($event.target).value)"
-                min="0" />
+                />
             </label>
           } @else {
             <span class="row-val">${{ fmt(row.paraUsar) }}</span>

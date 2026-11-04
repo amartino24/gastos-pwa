@@ -1,8 +1,8 @@
 import { Component, Input, NgZone, inject } from '@angular/core';
 import { UsdPipe } from '../../../../shared/pipes/usd.pipe';
+import { formatArs, parseArs } from '../../../../shared/utils/currency';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
-import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -17,7 +17,7 @@ import { StatementResultDialog } from './statement-result-dialog/statement-resul
   selector: 'app-bank-accounts',
   imports: [
     CommonModule,
-    MatIconModule, MatButtonModule, MatCheckboxModule, MatTooltipModule, MatProgressSpinnerModule,
+    MatIconModule, MatButtonModule, MatTooltipModule, MatProgressSpinnerModule,
     MatSnackBarModule, UsdPipe,
   ],
   templateUrl: './bank-accounts.html',
@@ -28,6 +28,7 @@ export class BankAccountsComponent {
   @Input({ required: true }) accounts!: BankAccount[];
   @Input() readonly = false;
   @Input() exchangeRate = 0;
+  protected readonly fmtArs = formatArs;
 
   private monthsService = inject(MonthsService);
   private parser = inject(StatementParserService);
@@ -41,8 +42,9 @@ export class BankAccountsComponent {
     return this.accounts.reduce((s, a) => s + (a.total || 0), 0);
   }
 
-  update(account: BankAccount, value: string): void {
-    const total = parseFloat(value) || 0;
+  update(account: BankAccount, el: HTMLInputElement): void {
+    const total = parseArs(el.value);
+    el.value = formatArs(total); // binding may not refresh if the formatted value didn't change
     this.monthsService.updateBankAccount(this.monthId, { ...account, total });
   }
 

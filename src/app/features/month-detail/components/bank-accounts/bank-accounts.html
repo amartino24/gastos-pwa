@@ -7,7 +7,7 @@
     <div class="bank-total">
       ${{ total | number:'1.0-0':'es-AR' }}
       @if (total | usd: exchangeRate; as usd) {
-        <span class="usd-hint">· US$ {{ usd | number:'1.2-2':'es-AR' }}</span>
+        <span class="usd-hint">US$ {{ usd | number:'1.2-2':'es-AR' }}</span>
       }
     </div>
   </div>
@@ -16,8 +16,9 @@
       <div class="bank-item" [class.bank-item-paid]="account.paid">
         <div class="bank-item-top">
           <div class="bank-name-row">
-            <mat-checkbox [checked]="account.paid" (change)="togglePaid(account)" color="primary" class="bank-check" />
-            <span class="bank-name">{{ account.name }}</span>
+            <input type="checkbox" class="bank-check" [id]="'paid-' + account.id"
+              [checked]="account.paid" (change)="togglePaid(account)" />
+            <label class="bank-name" [for]="'paid-' + account.id">{{ account.name }}</label>
           </div>
           @if (!readonly) {
             <div class="bank-item-actions">
@@ -40,10 +41,11 @@
 
         <div class="bank-amount-wrap">
           <span class="bank-prefix">$</span>
-          <input class="bank-amount-input" type="number"
-            [value]="account.total"
-            (change)="update(account, $any($event.target).value)"
-            [readonly]="readonly" min="0" />
+          <input class="bank-amount-input" type="text" inputmode="numeric"
+            [attr.aria-label]="'Total ' + account.name"
+            [value]="fmtArs(account.total)"
+            (change)="update(account, $any($event.target))"
+            [readonly]="readonly" />
         </div>
         @if (account.total | usd: exchangeRate; as usd) {
           <span class="usd-hint">US$ {{ usd | number:'1.2-2':'es-AR' }}</span>
