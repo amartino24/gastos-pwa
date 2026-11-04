@@ -1,26 +1,31 @@
-import { Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { CommonModule } from '@angular/common';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { map } from 'rxjs';
+import { DecimalPipe } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatToolbarModule } from '@angular/material/toolbar';
-import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { MatChipsModule } from '@angular/material/chips';
 import { MonthsService } from '../../core/services/months';
-import { MonthData, MONTH_NAMES, PaidSummary } from '../../core/models';
-import { ExpenseGroupComponent } from './components/expense-group/expense-group';
+import { MEDIOS, MONTH_NAMES } from '../../core/models';
+import { calcPaidSummary, monthId, totalUsd, upcomingDue } from '../../core/domain/month-logic';
+import { MedioSectionComponent } from './components/medio-section/medio-section';
 import { BankAccountsComponent } from './components/bank-accounts/bank-accounts';
 import { SummaryTableComponent } from './components/summary-table/summary-table';
 import { MonthHeaderComponent } from './components/month-header/month-header';
-import { ConfirmDialog } from '../../shared/components/confirm-dialog/confirm-dialog';
+import { AppMenuComponent } from '../../shared/components/app-menu/app-menu';
+import { NewMonthDialog } from '../../shared/components/new-month-dialog/new-month-dialog';
+import { daysClass, daysLabel, shortDate } from '../../shared/utils/dates';
+import { monthTitle, nextMonthToCreate } from '../../shared/utils/months';
 
+/** A month's screen. Without an :id route param it is the home screen and shows the current month. */
 @Component({
   selector: 'app-month-detail',
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    CommonModule,
-    MatToolbarModule, MatButtonModule, MatIconModule, MatSnackBarModule, MatChipsModule,
-    ExpenseGroupComponent, BankAccountsComponent, SummaryTableComponent, MonthHeaderComponent,
+    DecimalPipe, MatToolbarModule, MatButtonModule, MatIconModule,
+    MedioSectionComponent, BankAccountsComponent, SummaryTableComponent, MonthHeaderComponent, AppMenuComponent,
   ],
   templateUrl: './month-detail.html',
   styleUrl: './month-detail.scss',
@@ -30,57 +35,38 @@ export class MonthDetailComponent {
   private router = inject(Router);
   private monthsService = inject(MonthsService);
   private dialog = inject(MatDialog);
-  private snackBar = inject(MatSnackBar);
 
-  monthId = this.route.snapshot.paramMap.get('id')!;
-  month = computed(() => this.monthsService.getMonth(this.monthId));
-  summary = computed(() => {
-    const m = this.month();
-    return m ? this.monthsService.calcSummary(m) : [];
-  });
-  totalUSD = computed(() => this.summary().reduce((s, r) => s + r.usdNecesarios, 0));
-  paidSummary = computed((): PaidSummary | null => {
-    const m = this.month();
-    return m ? this.monthsService.calcPaidSummary(m) : null;
+  protected readonly medios = MEDIOS;
+  protected readonly title = monthTitle;
+  protected readonly daysLabel = daysLabel;
+  protected readonly daysClass = daysClass;
+  protected readonly shortDate = shortDate;
+
+  private paramId = toSignal(this.route.paramMap.pipe(map(p => p.get('id'))));
+  isHome = computed(() => !this.paramId());
+  month = computed(() => {
+    const id = this.paramId();
+    return id ? this.monthsService.getMonth(id) : this.monthsService.current();
   });
 
-  getTitle(month: MonthData): string {
-    return `${MONTH_NAMES[month.month - 1]} ${month.year}`;
+  totalUSD = computed(() => { const m = this.month(); return m ? totalUsd(m) : 0; });
+  paid = computed(() => { const m = this.month(); return m ? calcPaidSummary(m) : null; });
+  due = computed(() => { const m = this.month(); return m ? upcomingDue(m) : []; });
+  saveError = this.monthsService.saveError;
+
+  /** On home, offer to create the calendar month when it doesn't exist yet. */
+  missingCalendarMonth = computed(() => {
+    if (!this.isHome()) return null;
+    const t = new Date();
+    const id = monthId(t.getFullYear(), t.getMonth() + 1);
+    return this.monthsService.getMonth(id) ? null : MONTH_NAMES[t.getMonth()];
+  });
+
+  newMonth(): void {
+    this.dialog.open(NewMonthDialog, { data: nextMonthToCreate(this.monthsService.months(), new Date()), width: '360px' });
   }
 
   goBack(): void {
-    this.router.navigate(['/']);
-  }
-
-  closeMonth(): void {
-    const ref = this.dialog.open(ConfirmDialog, {
-      data: {
-        title: 'Cerrar mes',
-        message: 'Una vez cerrado el mes no podrás editar los valores. ¿Confirmás?',
-        confirmLabel: 'Cerrar mes',
-      },
-    });
-    ref.afterClosed().subscribe(result => {
-      if (result) {
-        this.monthsService.closeMonth(this.monthId);
-        this.snackBar.open('Mes cerrado', 'OK', { duration: 2000 });
-      }
-    });
-  }
-
-  reopenMonth(): void {
-    const ref = this.dialog.open(ConfirmDialog, {
-      data: {
-        title: 'Reabrir mes',
-        message: '¿Querés reabrir este mes para edición?',
-        confirmLabel: 'Reabrir',
-      },
-    });
-    ref.afterClosed().subscribe(result => {
-      if (result) {
-        this.monthsService.reopenMonth(this.monthId);
-        this.snackBar.open('Mes reabierto', 'OK', { duration: 2000 });
-      }
-    });
+    this.router.navigate(['/months']);
   }
 }

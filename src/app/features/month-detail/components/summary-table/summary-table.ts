@@ -1,44 +1,38 @@
-import { Component, Input, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
+import { DecimalPipe } from '@angular/common';
 import { MatIconModule } from '@angular/material/icon';
 import { MonthsService } from '../../../../core/services/months';
-import { PocketSummary, Pocket } from '../../../../core/models';
+import { MEDIO_LABELS, Medio, MonthData } from '../../../../core/models';
+import { calcSummary, totalUsd } from '../../../../core/domain/month-logic';
+import { formatArs, parseArs } from '../../../../shared/utils/currency';
 
+/** Collapsible "Cálculo de venta": balances per medio, USD to sell and USD actually sold. */
 @Component({
   selector: 'app-summary-table',
-  imports: [CommonModule, MatIconModule],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [DecimalPipe, MatIconModule],
   templateUrl: './summary-table.html',
   styleUrl: './summary-table.scss',
 })
 export class SummaryTableComponent {
-  @Input({ required: true }) summary!: PocketSummary[];
-  @Input({ required: true }) exchangeRate!: number;
-  @Input({ required: true }) totalUSD!: number;
-  @Input() monthId!: string;
-  @Input() readonly = false;
+  month = input.required<MonthData>();
 
   private monthsService = inject(MonthsService);
 
-  // Track which input is focused to show raw number
-  focusedInput: string | null = null;
+  protected readonly fmt = formatArs;
+  protected readonly labels = MEDIO_LABELS;
+  rows = computed(() => calcSummary(this.month()));
+  totalUSD = computed(() => totalUsd(this.month()));
 
-  fmt(n: number): string {
-    return new Intl.NumberFormat('es-AR', { maximumFractionDigits: 0 }).format(n);
+  setBalance(medio: Medio, field: 'sobrante' | 'paraUsar', el: HTMLInputElement): void {
+    const value = parseArs(el.value);
+    el.value = formatArs(value);
+    this.monthsService.updateBalance(this.month().id, medio, { [field]: value });
   }
 
-  onFocus(inputId: string): void { this.focusedInput = inputId; }
-  onBlur(inputId: string): void { this.focusedInput = null; }
-  isFocused(inputId: string): boolean { return this.focusedInput === inputId; }
-
-  updateSobrante(pocket: Pocket, value: string): void {
-    if (!this.monthId) return;
-    const sobrante = parseFloat(value.replace(/\./g, '').replace(',', '.')) || 0;
-    this.monthsService.updatePocket(this.monthId, { ...pocket, sobrante });
-  }
-
-  updateParaUsar(pocket: Pocket, value: string): void {
-    if (!this.monthId) return;
-    const paraUsar = parseFloat(value.replace(/\./g, '').replace(',', '.')) || 0;
-    this.monthsService.updatePocket(this.monthId, { ...pocket, paraUsar });
+  setUsdVendidos(el: HTMLInputElement): void {
+    const raw = el.value.trim();
+    const value = raw ? parseArs(raw) : undefined;
+    this.monthsService.updateUsdVendidos(this.month().id, value);
   }
 }

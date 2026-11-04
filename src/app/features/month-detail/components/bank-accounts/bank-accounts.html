@@ -1,9 +1,9 @@
 <div class="bank-card">
   <div class="bank-header">
-    <div class="bank-title">
-      <mat-icon>credit_card</mat-icon>
-      <span>Resúmenes bancarios</span>
-    </div>
+    <h3 class="bank-title">
+      <mat-icon aria-hidden="true">credit_card</mat-icon>
+      <span>Tarjetas</span>
+    </h3>
     <div class="bank-total">
       ${{ total | number:'1.0-0':'es-AR' }}
       @if (total | usd: exchangeRate; as usd) {

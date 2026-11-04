@@ -2,10 +2,10 @@
 
 // ─── Pocket card ──────────────────────────────────────────
 .pocket-card {
-  background: #fff;
+  background: var(--g-surface);
+  border: 1px solid var(--g-line);
   border-radius: 14px;
   margin-bottom: 10px;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
   overflow: hidden;
 }
 
@@ -143,7 +143,6 @@
   border-radius: 14px;
   padding: 16px 20px;
   margin-top: 4px;
-  box-shadow: 0 4px 16px rgba(31,111,84,0.3);
 }
 
 .total-label {
@@ -161,3 +160,34 @@
 
   small { font-size: 0.85rem; font-weight: 500; opacity: 0.8; margin-left: 3px; }
 }
+
+// ─── Collapsible wrapper ──────────────────────────────────
+.calc {
+  background: var(--g-surface);
+  border: 1px solid var(--g-line);
+  border-radius: 20px;
+  margin-bottom: 12px;
+  overflow: hidden;
+
+  summary {
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 56px;
+    padding: 0 16px;
+    cursor: pointer;
+    &::-webkit-details-marker { display: none; }
+    &:focus-visible { outline: 2px solid var(--g-accent); outline-offset: -2px; }
+  }
+
+  .chevron { transition: transform .2s; color: var(--g-ink-2); }
+  &[open] .chevron { transform: rotate(180deg); }
+  .summary-wrap { padding: 0 12px 12px; }
+}
+
+.calc-title { flex: 1; font-weight: 700; font-size: 1.0625rem; }
+.calc-total { font-weight: 600; font-size: 0.9rem; color: var(--g-ink-2); }
+
+.vendidos { padding: 4px 0; }
+.field-suffix { font-size: 0.75rem; color: var(--g-ink-2); margin-left: 4px; }

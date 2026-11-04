@@ -1,15 +1,13 @@
 <div class="tc-bar">
-  <div class="tc-label">
-    <mat-icon>currency_exchange</mat-icon>
-    <span>Tipo de cambio</span>
-  </div>
+  <label class="tc-label" for="tc-input">Tipo de cambio</label>
   <div class="tc-input-wrap">
-    <span class="tc-prefix">$</span>
-    <input class="tc-input" type="number"
-      [value]="month.exchangeRate"
-      (change)="onRateChange($any($event.target).value)"
-      [readonly]="month.isClosed"
-      min="1" />
+    <span class="tc-prefix" aria-hidden="true">$</span>
+    <input id="tc-input" class="tc-input" type="text" inputmode="numeric"
+      [value]="fmt(month().exchangeRate)" (change)="onRateChange($any($event.target))" />
     <span class="tc-suffix">ARS/USD</span>
   </div>
+  <button type="button" class="refresh" (click)="refreshBlue()" [disabled]="refreshing()"
+    aria-label="Actualizar con dólar blue (promedio compra/venta)" title="Dólar blue promedio">
+    <mat-icon aria-hidden="true" [class.spin]="refreshing()">refresh</mat-icon>
+  </button>
 </div>

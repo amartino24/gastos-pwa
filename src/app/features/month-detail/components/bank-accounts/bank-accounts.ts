@@ -1,6 +1,7 @@
 import { Component, Input, NgZone, inject } from '@angular/core';
 import { UsdPipe } from '../../../../shared/pipes/usd.pipe';
 import { formatArs, parseArs } from '../../../../shared/utils/currency';
+import { daysClass, daysLabel, shortDate } from '../../../../shared/utils/dates';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
@@ -26,7 +27,7 @@ import { StatementResultDialog } from './statement-result-dialog/statement-resul
 export class BankAccountsComponent {
   @Input({ required: true }) monthId!: string;
   @Input({ required: true }) accounts!: BankAccount[];
-  @Input() readonly = false;
+  readonly = false; // months are always editable now
   @Input() exchangeRate = 0;
   protected readonly fmtArs = formatArs;
 
@@ -55,38 +56,9 @@ export class BankAccountsComponent {
     });
   }
 
-  // Returns days until date (negative = past, null = no date)
-  daysUntil(dateStr?: string): number | null {
-    if (!dateStr) return null;
-    const today = new Date(); today.setHours(0, 0, 0, 0);
-    const target = new Date(dateStr + 'T00:00:00');
-    return Math.round((target.getTime() - today.getTime()) / 86_400_000);
-  }
-
-  daysLabel(dateStr?: string): string {
-    const d = this.daysUntil(dateStr);
-    if (d === null) return '';
-    if (d === 0) return 'hoy';
-    if (d === 1) return 'mañana';
-    if (d > 0) return `en ${d}d`;
-    return `hace ${Math.abs(d)}d`;
-  }
-
-  daysClass(dateStr?: string): string {
-    const d = this.daysUntil(dateStr);
-    if (d === null) return '';
-    if (d < 0) return 'days-overdue';
-    if (d <= 3) return 'days-urgent';
-    if (d <= 7) return 'days-soon';
-    return 'days-ok';
-  }
-
-  formatDate(dateStr?: string): string {
-    if (!dateStr) return '';
-    const [, m, d] = dateStr.split('-');
-    const months = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
-    return `${parseInt(d)} ${months[parseInt(m) - 1]}`;
-  }
+  protected readonly daysLabel = daysLabel;
+  protected readonly daysClass = daysClass;
+  protected readonly formatDate = shortDate;
 
   uploadStatement(account: BankAccount, event: Event): void {
     const file = (event.target as HTMLInputElement).files?.[0];

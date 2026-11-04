@@ -7,6 +7,7 @@ import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { firebaseAuth, firebaseDb, googleProvider } from './firebase';
 import { AppState } from '../models';
 import { DEFAULT_STATE, STORAGE_KEY } from './storage';
+import { isLegacyState, migrateState } from '../domain/migration';
 
 @Injectable({ providedIn: 'root' })
 export class FirestoreService {
@@ -14,6 +15,8 @@ export class FirestoreService {
 
   // null = checking auth, 'unauthenticated' = needs login, 'ready' = data loaded
   authState = signal<'loading' | 'unauthenticated' | 'ready'>('loading');
+  /** Set when the last Firestore write failed; cleared on the next successful one. */
+  saveError = signal(false);
 
   async init(): Promise<AppState> {
     // Check if we're coming back from a Google redirect (iOS Safari / any platform)
@@ -98,8 +101,18 @@ export class FirestoreService {
     const snap = await getDoc(ref);
 
     if (snap.exists()) {
-      console.log('[Firestore] ✅ Loaded for', user.email ?? user.uid);
-      return snap.data() as AppState;
+      const raw = snap.data();
+      if (!isLegacyState(raw)) {
+        console.log('[Firestore] ✅ Loaded for', user.email ?? user.uid);
+        return migrateState(raw);
+      }
+      // v1 → v2: keep an untouched copy before rewriting the main document.
+      const backupRef = doc(firebaseDb, 'users', user.uid, 'data', 'backup-v1');
+      await setDoc(backupRef, { ...raw, backedUpAt: new Date().toISOString() });
+      const migrated = migrateState(raw);
+      await setDoc(ref, JSON.parse(JSON.stringify(migrated)));
+      console.log('[Firestore] ⬆️ Migrated v1 → v2 (backup in data/backup-v1)');
+      return migrated;
     }
 
     // First login — migrate localStorage data if present
@@ -119,7 +132,7 @@ export class FirestoreService {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
-        const state = JSON.parse(raw) as AppState;
+        const state = migrateState(JSON.parse(raw));
         if (state?.months) return state;
       }
     } catch { /* corrupt data */ }
@@ -135,6 +148,10 @@ export class FirestoreService {
     if (!this.uid) return;
     const ref = doc(firebaseDb, 'users', this.uid, 'data', 'state');
     setDoc(ref, JSON.parse(JSON.stringify(state)))
-      .catch(err => console.error('[Firestore] ❌ Save failed:', err));
+      .then(() => this.saveError.set(false))
+      .catch(err => {
+        console.error('[Firestore] ❌ Save failed:', err);
+        this.saveError.set(true);
+      });
   }
 }

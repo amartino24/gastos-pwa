@@ -1,0 +1,53 @@
+<section class="medio" [attr.aria-labelledby]="'medio-' + medio()">
+  <header class="medio-head">
+    <h2 [id]="'medio-' + medio()">{{ label() }}</h2>
+    <div class="medio-total">
+      <span class="ars">${{ total() | number:'1.0-0':'es-AR' }}</span>
+      @if (total() | usd: month().exchangeRate; as usd) {
+        <span class="usd">US$ {{ usd | number:'1.2-2':'es-AR' }}</span>
+      }
+    </div>
+    @if (items().length) {
+      <span class="count" [class.done]="paidCount() === items().length">{{ paidCount() }}/{{ items().length }}</span>
+    }
+  </header>
+
+  <ul class="items">
+    @for (item of items(); track item.id) {
+      <li class="item" [class.paid]="item.paid">
+        <input type="checkbox" class="check" [checked]="item.paid" (change)="togglePaid(item)"
+          [attr.aria-label]="(item.paid ? 'Marcar pendiente: ' : 'Marcar pagado: ') + item.name" />
+        <input class="name" [value]="item.name" aria-label="Nombre del gasto"
+          (blur)="rename(item, $any($event.target).value)" />
+        <div class="amount">
+          <label class="amount-field">
+            <span aria-hidden="true">$</span>
+            <input type="text" inputmode="numeric" [value]="fmtArs(item.amount)"
+              [attr.aria-label]="'Monto ' + item.name"
+              (change)="setAmount(item, $any($event.target))" />
+          </label>
+          @if (item.amount | usd: month().exchangeRate; as usd) {
+            <span class="usd">US$ {{ usd | number:'1.2-2':'es-AR' }}</span>
+          }
+        </div>
+        <div class="actions">
+          <button type="button" class="icon-btn" (click)="moveToOther(item)"
+            [attr.aria-label]="'Mover ' + item.name + ' a ' + otherLabel()" [title]="'Mover a ' + otherLabel()">
+            <mat-icon aria-hidden="true">swap_horiz</mat-icon>
+          </button>
+          <button type="button" class="icon-btn" (click)="remove(item)" [attr.aria-label]="'Eliminar ' + item.name">
+            <mat-icon aria-hidden="true">close</mat-icon>
+          </button>
+        </div>
+      </li>
+    } @empty {
+      <li class="empty">Sin gastos en {{ label() }}</li>
+    }
+  </ul>
+
+  <button type="button" class="add" (click)="add()">
+    <mat-icon aria-hidden="true">add</mat-icon> Agregar a {{ label() }}
+  </button>
+
+  <ng-content />
+</section>

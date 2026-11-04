@@ -1,14 +1,16 @@
 import { Injectable, signal, computed, inject } from '@angular/core';
 import { FirestoreService } from './firestore.service';
 import { DEFAULT_STATE } from './storage';
+import { migrateState } from '../domain/migration';
 import {
-  AppState, MonthData, ExpenseItem, BankAccount,
-  Pocket, PocketSummary, PaidSummary
+  buildNewMonth, calcPaidSummary, calcSummary, currentMonth, lastExchangeRate, monthId, sortMonthsDesc,
+  templateFromMonth,
+} from '../domain/month-logic';
+import {
+  AppState, BankAccount, ExpenseItem, Medio, MedioBalance, MedioSummary, MonthData, MonthSource, PaidSummary,
 } from '../models';
 
-function uuid(): string {
-  return crypto.randomUUID();
-}
+const uuid = () => crypto.randomUUID();
 
 @Injectable({ providedIn: 'root' })
 export class MonthsService {
@@ -17,16 +19,18 @@ export class MonthsService {
 
   loading = signal(true);
   authState = this.firestore.authState;
+  saveError = this.firestore.saveError;
 
-  months = computed(() => [...this.state().months].sort((a: MonthData, b: MonthData) => {
-    if (a.year !== b.year) return b.year - a.year;
-    return b.month - a.month;
-  }));
+  /** Newest first. */
+  months = computed(() => sortMonthsDesc(this.state().months));
+  template = computed(() => this.state().template);
+  /** Calendar month if it exists, else the newest. */
+  current = computed(() => currentMonth(this.state().months, new Date()));
+  lastExchangeRate = computed(() => lastExchangeRate(this.state().months));
 
   async init(): Promise<void> {
     try {
-      const state = await this.firestore.init();
-      this.state.set(state);
+      this.state.set(await this.firestore.init());
     } catch (err) {
       console.error('[MonthsService] init failed:', err);
     } finally {
@@ -35,10 +39,8 @@ export class MonthsService {
   }
 
   async signInWithGoogle(): Promise<void> {
-    // Desktop: popup returns state immediately.
-    // Mobile: redirect navigates away — this line never executes on mobile.
-    const state = await this.firestore.signInWithGoogle();
-    this.state.set(state);
+    // Popup returns state immediately; redirect (Android) navigates away and never gets here.
+    this.state.set(await this.firestore.signInWithGoogle());
   }
 
   async signOut(): Promise<void> {
@@ -46,313 +48,98 @@ export class MonthsService {
     this.state.set(structuredClone(DEFAULT_STATE));
   }
 
-  get userEmail(): string | null {
-    return this.firestore.currentUser?.email ?? null;
-  }
+  get userEmail(): string | null { return this.firestore.currentUser?.email ?? null; }
+  get userPhoto(): string | null { return this.firestore.currentUser?.photoURL ?? null; }
 
-  get userPhoto(): string | null {
-    return this.firestore.currentUser?.photoURL ?? null;
-  }
+  getState(): AppState { return this.state(); }
 
-  private save(): void {
-    this.firestore.save(this.state());
+  /** Replaces all data (backup import). Accepts v1 or v2 backups. */
+  loadState(raw: unknown): void {
+    this.state.set(migrateState(raw));
+    this.save();
   }
 
   getMonth(id: string): MonthData | undefined {
     return this.state().months.find(m => m.id === id);
   }
 
-  createMonth(year: number, month: number, exchangeRate: number): MonthData {
-    const template = this.state().template;
-    const id = `${year}-${String(month).padStart(2, '0')}`;
+  monthExists(year: number, month: number): boolean {
+    return !!this.getMonth(monthId(year, month));
+  }
 
-    const newMonth: MonthData = {
-      id,
-      year,
-      month,
-      exchangeRate,
-      expenseGroups: template.expenseGroups.map(g => ({
-        ...structuredClone(g),
-        id: uuid(),
-        items: g.items.map(i => ({ ...i, id: uuid() })),
-      })),
-      bankAccounts: template.bankAccounts.map(b => ({ ...b, id: uuid(), total: 0 })),
-      pockets: template.pockets.map(p => ({
-        ...p,
-        id: uuid(),
-        sobrante: 0,
-      })) as Pocket[],
-      isClosed: false,
-    };
+  // ── Months ────────────────────────────────────────────────────────────────
 
-    // remap pocket groupIds to new group ids
-    const oldToNew: Record<string, string> = {};
-    template.expenseGroups.forEach((og, idx) => {
-      oldToNew[og.id] = newMonth.expenseGroups[idx].id;
-    });
-    newMonth.pockets.forEach(p => {
-      p.groupIds = p.groupIds.map(gid => oldToNew[gid] ?? gid);
-    });
-
-    this.state.update(s => ({ ...s, months: [...s.months, newMonth] }));
+  createMonth(year: number, month: number, exchangeRate: number, source: MonthSource): MonthData {
+    const s = this.state();
+    const newMonth = buildNewMonth({ year, month, exchangeRate, source }, sortMonthsDesc(s.months)[0], s.template, uuid);
+    this.state.update(st => ({ ...st, months: [...st.months, newMonth] }));
     this.save();
     return newMonth;
   }
 
-  monthExists(year: number, month: number): boolean {
-    const id = `${year}-${String(month).padStart(2, '0')}`;
-    return this.state().months.some(m => m.id === id);
+  deleteMonth(id: string): void {
+    this.state.update(s => ({ ...s, months: s.months.filter(m => m.id !== id) }));
+    this.save();
   }
 
-  updateExchangeRate(monthId: string, rate: number): void {
+  saveAsTemplate(id: string): void {
+    const m = this.getMonth(id);
+    if (!m) return;
+    this.state.update(s => ({ ...s, template: templateFromMonth(m) }));
+    this.save();
+  }
+
+  updateExchangeRate(id: string, exchangeRate: number): void {
+    this.patchMonth(id, () => ({ exchangeRate }));
+  }
+
+  updateUsdVendidos(id: string, usdVendidos: number | undefined): void {
+    this.patchMonth(id, () => ({ usdVendidos }));
+  }
+
+  updateBalance(id: string, medio: Medio, patch: Partial<MedioBalance>): void {
+    this.patchMonth(id, m => ({ balances: { ...m.balances, [medio]: { ...m.balances[medio], ...patch } } }));
+  }
+
+  // ── Items ─────────────────────────────────────────────────────────────────
+
+  addItem(id: string, medio: Medio, name: string, amount: number): void {
+    const item: ExpenseItem = { id: uuid(), name, amount, medio };
+    this.patchMonth(id, m => ({ items: [...m.items, item] }));
+  }
+
+  updateItem(id: string, item: ExpenseItem): void {
+    this.patchMonth(id, m => ({ items: m.items.map(i => i.id === item.id ? item : i) }));
+  }
+
+  removeItem(id: string, itemId: string): void {
+    this.patchMonth(id, m => ({ items: m.items.filter(i => i.id !== itemId) }));
+  }
+
+  // ── Bank statements ───────────────────────────────────────────────────────
+
+  updateBankAccount(id: string, account: BankAccount): void {
+    this.patchMonth(id, m => ({ bankAccounts: m.bankAccounts.map(b => b.id === account.id ? account : b) }));
+  }
+
+  removeBankAccount(id: string, accountId: string): void {
+    this.patchMonth(id, m => ({ bankAccounts: m.bankAccounts.filter(b => b.id !== accountId) }));
+  }
+
+  // ── Derived ───────────────────────────────────────────────────────────────
+
+  calcSummary(month: MonthData): MedioSummary[] { return calcSummary(month); }
+  calcPaidSummary(month: MonthData): PaidSummary { return calcPaidSummary(month); }
+
+  private patchMonth(id: string, patch: (m: MonthData) => Partial<MonthData>): void {
     this.state.update(s => ({
       ...s,
-      months: s.months.map(m => m.id === monthId ? { ...m, exchangeRate: rate } : m),
+      months: s.months.map(m => m.id === id ? { ...m, ...patch(m) } : m),
     }));
     this.save();
   }
 
-  toggleItemPaid(monthId: string, groupId: string, item: ExpenseItem): void {
-    this.updateExpenseItem(monthId, groupId, { ...item, paid: !item.paid });
-  }
-
-  updateExpenseItem(monthId: string, groupId: string, item: ExpenseItem): void {
-    this.state.update(s => ({
-      ...s,
-      months: s.months.map(m => {
-        if (m.id !== monthId) return m;
-        return {
-          ...m,
-          expenseGroups: m.expenseGroups.map(g => {
-            if (g.id !== groupId) return g;
-            return { ...g, items: g.items.map(i => i.id === item.id ? item : i) };
-          }),
-        };
-      }),
-    }));
-    this.save();
-  }
-
-  addExpenseItem(monthId: string, groupId: string, name: string, amount: number): void {
-    const item: ExpenseItem = { id: uuid(), name, amount };
-    this.state.update(s => ({
-      ...s,
-      months: s.months.map(m => {
-        if (m.id !== monthId) return m;
-        return {
-          ...m,
-          expenseGroups: m.expenseGroups.map(g =>
-            g.id === groupId ? { ...g, items: [...g.items, item] } : g
-          ),
-        };
-      }),
-    }));
-    this.save();
-  }
-
-  removeExpenseItem(monthId: string, groupId: string, itemId: string): void {
-    this.state.update(s => ({
-      ...s,
-      months: s.months.map(m => {
-        if (m.id !== monthId) return m;
-        return {
-          ...m,
-          expenseGroups: m.expenseGroups.map(g =>
-            g.id === groupId ? { ...g, items: g.items.filter(i => i.id !== itemId) } : g
-          ),
-        };
-      }),
-    }));
-    this.save();
-  }
-
-  removeBankAccount(monthId: string, accountId: string): void {
-    this.state.update(s => ({
-      ...s,
-      months: s.months.map(m => {
-        if (m.id !== monthId) return m;
-        return { ...m, bankAccounts: m.bankAccounts.filter(b => b.id !== accountId) };
-      }),
-    }));
-    this.save();
-  }
-
-  updateBankAccount(monthId: string, account: BankAccount): void {
-    this.state.update(s => ({
-      ...s,
-      months: s.months.map(m => {
-        if (m.id !== monthId) return m;
-        return {
-          ...m,
-          bankAccounts: m.bankAccounts.map(b => b.id === account.id ? account : b),
-        };
-      }),
-    }));
-    this.save();
-  }
-
-  updatePocket(monthId: string, pocket: Pocket): void {
-    this.state.update(s => ({
-      ...s,
-      months: s.months.map(m => {
-        if (m.id !== monthId) return m;
-        return {
-          ...m,
-          pockets: m.pockets.map(p => p.id === pocket.id ? pocket : p),
-        };
-      }),
-    }));
-    this.save();
-  }
-
-  closeMonth(monthId: string): void {
-    this.state.update(s => ({
-      ...s,
-      months: s.months.map(m =>
-        m.id === monthId ? { ...m, isClosed: true, closedAt: new Date().toISOString() } : m
-      ),
-    }));
-    this.save();
-  }
-
-  reopenMonth(monthId: string): void {
-    this.state.update(s => ({
-      ...s,
-      months: s.months.map(m =>
-        m.id === monthId ? { ...m, isClosed: false, closedAt: undefined } : m
-      ),
-    }));
-    this.save();
-  }
-
-  deleteMonth(monthId: string): void {
-    this.state.update(s => ({
-      ...s,
-      months: s.months.filter(m => m.id !== monthId),
-    }));
-    this.save();
-  }
-
-  getState(): AppState {
-    return this.state();
-  }
-
-  loadState(newState: AppState): void {
-    this.state.set(newState);
-    this.save();
-  }
-
-  // ── Template methods ──────────────────────────────────────────────────────
-
-  template = computed(() => this.state().template);
-
-  updateTemplateItem(groupId: string, item: ExpenseItem): void {
-    this.state.update(s => ({
-      ...s,
-      template: {
-        ...s.template,
-        expenseGroups: s.template.expenseGroups.map(g =>
-          g.id === groupId ? { ...g, items: g.items.map(i => i.id === item.id ? item : i) } : g
-        ),
-      },
-    }));
-    this.save();
-  }
-
-  addTemplateItem(groupId: string, name: string, amount: number): void {
-    const item: ExpenseItem = { id: uuid(), name, amount };
-    this.state.update(s => ({
-      ...s,
-      template: {
-        ...s.template,
-        expenseGroups: s.template.expenseGroups.map(g =>
-          g.id === groupId ? { ...g, items: [...g.items, item] } : g
-        ),
-      },
-    }));
-    this.save();
-  }
-
-  removeTemplateItem(groupId: string, itemId: string): void {
-    this.state.update(s => ({
-      ...s,
-      template: {
-        ...s.template,
-        expenseGroups: s.template.expenseGroups.map(g =>
-          g.id === groupId ? { ...g, items: g.items.filter(i => i.id !== itemId) } : g
-        ),
-      },
-    }));
-    this.save();
-  }
-
-  updateTemplatePocketParaUsar(pocketId: string, paraUsar: number): void {
-    this.state.update(s => ({
-      ...s,
-      template: {
-        ...s.template,
-        pockets: s.template.pockets.map(p =>
-          p.id === pocketId ? { ...p, paraUsar } : p
-        ),
-      },
-    }));
-    this.save();
-  }
-
-  resetTemplateToDefault(): void {
-    const defaultTemplate = structuredClone(DEFAULT_STATE.template);
-    this.state.update(s => ({ ...s, template: defaultTemplate }));
-    this.save();
-  }
-
-  calcPaidSummary(month: MonthData): PaidSummary {
-    let totalItems = 0;
-    let paidItems = 0;
-    let totalARS = 0;
-    let paidARS = 0;
-    for (const group of month.expenseGroups) {
-      for (const item of group.items) {
-        totalItems++;
-        totalARS += item.amount || 0;
-        if (item.paid) {
-          paidItems++;
-          paidARS += item.amount || 0;
-        }
-      }
-    }
-    for (const account of month.bankAccounts) {
-      totalItems++;
-      totalARS += account.total || 0;
-      if (account.paid) {
-        paidItems++;
-        paidARS += account.total || 0;
-      }
-    }
-    return { totalItems, paidItems, totalARS, paidARS, pendingARS: totalARS - paidARS };
-  }
-
-  calcSummary(month: MonthData): PocketSummary[] {
-    return month.pockets.map(pocket => {
-      const groups = month.expenseGroups.filter(g => pocket.groupIds.includes(g.id));
-      const groupTotal = groups.reduce((sum, g) => sum + g.items.reduce((s, i) => s + (i.amount || 0), 0), 0);
-      const bankTotal = pocket.isBanco
-        ? month.bankAccounts.reduce((sum, b) => sum + (b.total || 0), 0)
-        : 0;
-      const totalGastos = groupTotal + bankTotal;
-      const diferencia = pocket.sobrante - totalGastos;
-      const arsNecesarios = diferencia < 0 ? Math.abs(diferencia) + pocket.paraUsar : pocket.paraUsar;
-      const usdNecesarios = month.exchangeRate > 0 ? arsNecesarios / month.exchangeRate : 0;
-      return {
-        pocket,
-        totalGastos,
-        sobrante: pocket.sobrante,
-        diferencia,
-        diferenciaUSD: month.exchangeRate > 0 ? diferencia / month.exchangeRate : 0,
-        paraUsar: pocket.paraUsar,
-        paraUsarUSD: month.exchangeRate > 0 ? pocket.paraUsar / month.exchangeRate : 0,
-        usdNecesarios,
-        arsNecesarios,
-      };
-    });
+  private save(): void {
+    this.firestore.save(this.state());
   }
 }

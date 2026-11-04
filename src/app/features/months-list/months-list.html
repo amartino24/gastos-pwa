@@ -1,123 +1,37 @@
 <mat-toolbar>
-  <mat-icon style="margin-right:8px">account_balance_wallet</mat-icon>
-  <span style="font-weight:600;letter-spacing:0.5px">Mis Gastos</span>
-  <span style="flex:1"></span>
-  <input #importInput type="file" accept=".json" style="display:none" (change)="importData($event)" />
-  <button mat-icon-button (click)="exportData()" matTooltip="Exportar backup JSON">
-    <mat-icon>download</mat-icon>
+  <button mat-icon-button (click)="goHome()" aria-label="Volver al mes actual">
+    <mat-icon>arrow_back</mat-icon>
   </button>
-  <button mat-icon-button (click)="importInput.click()" matTooltip="Importar backup JSON">
-    <mat-icon>upload</mat-icon>
-  </button>
-  <button mat-icon-button (click)="goToHistory()" matTooltip="Historial y gráficos">
-    <mat-icon>bar_chart</mat-icon>
-  </button>
-  <button mat-icon-button (click)="goToTemplate()" matTooltip="Plantilla">
-    <mat-icon>tune</mat-icon>
-  </button>
-  <button mat-icon-button (click)="signOut()" [matTooltip]="userEmail() ?? 'Cerrar sesión'" class="avatar-btn">
-    @if (userPhoto()) {
-      <img [src]="userPhoto()!" alt="avatar" class="avatar-img" />
-    } @else {
-      <mat-icon>account_circle</mat-icon>
-    }
-  </button>
+  <h1 class="toolbar-title">Meses</h1>
+  <app-menu />
 </mat-toolbar>
 
-<div class="page-container">
-
-  <button mat-flat-button class="new-month-btn" (click)="showNewMonthForm = !showNewMonthForm">
-    <mat-icon>add_circle</mat-icon>
-    Nuevo mes
+<main class="page-container">
+  <button mat-flat-button class="new-month-btn" type="button" (click)="newMonth()">
+    <mat-icon>add</mat-icon> Nuevo mes
   </button>
 
-  @if (showNewMonthForm) {
-    <mat-card class="form-card">
-      <mat-card-content>
-        <p class="form-title">Nuevo mes</p>
-        <form [formGroup]="newMonthForm">
-          <div class="form-row">
-            <mat-form-field appearance="outline" style="flex:1">
-              <mat-label>Mes</mat-label>
-              <mat-select formControlName="month">
-                @for (m of availableMonths(); track m.value) {
-                  <mat-option [value]="m.value">{{ m.label }}</mat-option>
-                }
-              </mat-select>
-            </mat-form-field>
-            <mat-form-field appearance="outline" style="flex:1">
-              <mat-label>Año</mat-label>
-              <mat-select formControlName="year">
-                @for (y of years; track y) {
-                  <mat-option [value]="y">{{ y }}</mat-option>
-                }
-              </mat-select>
-            </mat-form-field>
-          </div>
-          <mat-form-field appearance="outline" style="width:100%">
-            <mat-label>Tipo de cambio (ARS/USD)</mat-label>
-            <mat-icon matPrefix style="margin-right:4px;font-size:18px;color:#888">attach_money</mat-icon>
-            <input matInput type="number" formControlName="exchangeRate" min="1" />
-          </mat-form-field>
-          <div class="form-actions">
-            <button mat-button (click)="showNewMonthForm = false">Cancelar</button>
-            <button mat-flat-button color="primary" (click)="createMonth()" [disabled]="newMonthForm.invalid">
-              Crear mes
-            </button>
-          </div>
-        </form>
-      </mat-card-content>
-    </mat-card>
-  }
-
-  @if (months().length === 0) {
-    <div class="empty-state">
-      <mat-icon>calendar_month</mat-icon>
-      <p>No hay meses todavía</p>
-      <span>Creá el primero con el botón de arriba</span>
-    </div>
-  }
-
-  @for (month of months(); track month.id) {
-    <div class="month-card" [class.month-closed]="month.isClosed" (click)="openMonth(month.id)">
-      <div class="month-card-accent"></div>
-      <div class="month-card-body">
-        <div class="month-card-top">
-          <div>
-            <div class="month-name">{{ getMonthLabel(month.month) }} {{ month.year }}</div>
-            <div class="month-tc">TC: ${{ month.exchangeRate | number:'1.0-0':'es-AR' }} ARS/USD</div>
-          </div>
-          <div class="month-card-actions">
-            @if (month.isClosed) {
-              <span class="chip-closed"><mat-icon style="font-size:14px;width:14px;height:14px">lock</mat-icon> Cerrado</span>
-            } @else {
-              <span class="chip-open"><mat-icon style="font-size:14px;width:14px;height:14px">lock_open</mat-icon> Abierto</span>
-            }
-            <button mat-icon-button class="delete-btn" (click)="deleteMonth($event, month.id)">
-              <mat-icon>delete_outline</mat-icon>
-            </button>
-          </div>
-        </div>
-        <div class="month-usd">
-          <span class="usd-label">USD a vender</span>
-          <span class="usd-amount">{{ getTotalUSD(month) | number:'1.2-2':'es-AR' }} <small>USD</small></span>
-        </div>
-        @let ps = getPaidSummary(month);
-        @if (ps.totalItems > 0) {
-          <div class="month-progress">
-            <div class="progress-track">
-              <div class="progress-fill"
-                [style.width.%]="ps.totalItems ? (ps.paidItems / ps.totalItems) * 100 : 0"
-                [class.progress-done]="ps.paidItems === ps.totalItems">
-              </div>
-            </div>
-            <span class="progress-label">
-              {{ ps.paidItems }}/{{ ps.totalItems }} pagados
+  @if (months().length) {
+    <ul class="list">
+      @for (m of months(); track m.id) {
+        <li class="row">
+          <a class="row-link" [routerLink]="['/month', m.id]">
+            <span class="row-main">
+              <span class="row-title">{{ title(m) }}</span>
+              <span class="row-sub">
+                TC ${{ m.exchangeRate | number:'1.0-0':'es-AR' }}
+                @if (m.usdVendidos) { · vendidos {{ m.usdVendidos | number:'1.0-2':'es-AR' }} USD }
+              </span>
             </span>
-          </div>
-        }
-      </div>
-    </div>
+            <span class="row-usd">{{ usd(m) | number:'1.2-2':'es-AR' }} <small>USD</small></span>
+          </a>
+          <button type="button" class="del" (click)="deleteMonth(m)" [attr.aria-label]="'Eliminar ' + title(m)">
+            <mat-icon aria-hidden="true">delete_outline</mat-icon>
+          </button>
+        </li>
+      }
+    </ul>
+  } @else {
+    <p class="empty">No hay meses todavía.</p>
   }
-
-</div>
+</main>

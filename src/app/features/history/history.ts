@@ -15,7 +15,8 @@ import {
   ChartConfiguration,
 } from 'chart.js';
 import { MonthsService } from '../../core/services/months';
-import { MONTH_NAMES, MonthData } from '../../core/models';
+import { MEDIOS, MEDIO_LABELS, MONTH_NAMES, MonthData } from '../../core/models';
+import { calcPaidSummary, calcSummary, medioTotal, totalUsd } from '../../core/domain/month-logic';
 
 Chart.register(
   CategoryScale, LinearScale, BarElement, LineElement, PointElement,
@@ -23,7 +24,7 @@ Chart.register(
   BarController, LineController, DoughnutController,
 );
 
-const COLORS = ['#1F6F54','#22c55e','#f59e0b','#06b6d4','#f43f5e','#2B8A68','#10b981','#f97316'];
+const COLORS = ['#1F6F54', '#C97A2B', '#2B4C9B', '#7A8B3A', '#9A4A06', '#4F8F86', '#8A6FB0', '#5A5E66'];
 
 @Component({
   selector: 'app-history',
@@ -60,12 +61,8 @@ export class History implements AfterViewInit, OnDestroy {
   stats = computed(() => {
     const months = this.displayMonths();
     if (!months.length) return null;
-    const usdValues = months.map(m =>
-      this.monthsService.calcSummary(m).reduce((s, p) => s + p.usdNecesarios, 0)
-    );
-    const arsValues = months.map(m =>
-      m.expenseGroups.reduce((s, g) => s + g.items.reduce((a, i) => a + (i.amount || 0), 0), 0)
-    );
+    const usdValues = months.map(totalUsd);
+    const arsValues = months.map(m => calcPaidSummary(m).totalARS);
     return {
       avgUSD: usdValues.reduce((a, b) => a + b, 0) / usdValues.length,
       maxUSD: Math.max(...usdValues),
@@ -110,46 +107,51 @@ export class History implements AfterViewInit, OnDestroy {
   }
 
   private buildUSDChart(months: MonthData[], labels: string[]): void {
-    const summaries = months.map(m => this.monthsService.calcSummary(m));
-    const pocketNames = [...new Set(months.flatMap(m => m.pockets.map(p => p.name)))];
-
-    const datasets = pocketNames.map((name, i) => ({
-      label: name,
-      data: summaries.map(s => s.find(p => p.pocket.name === name)?.usdNecesarios ?? 0),
-      backgroundColor: COLORS[i % COLORS.length] + 'cc',
-      borderColor: COLORS[i % COLORS.length],
+    const summaries = months.map(calcSummary);
+    const bars = MEDIOS.map((medio, i) => ({
+      type: 'bar' as const,
+      label: `A vender · ${MEDIO_LABELS[medio]}`,
+      data: summaries.map(s => s.find(r => r.medio === medio)?.usdNecesarios ?? 0),
+      backgroundColor: COLORS[i] + 'cc',
+      borderColor: COLORS[i],
       borderWidth: 1,
       borderRadius: 4,
+      stack: 'aVender',
     }));
+    const vendidos = {
+      type: 'line' as const,
+      label: 'USD vendidos',
+      data: months.map(m => m.usdVendidos ?? null),
+      borderColor: '#9A4A06',
+      backgroundColor: '#9A4A06',
+      borderWidth: 2,
+      pointRadius: 4,
+      spanGaps: true,
+      tension: 0.3,
+    };
 
-    const config: ChartConfiguration<'bar'> = {
+    const config = {
       type: 'bar',
-      data: { labels, datasets },
+      data: { labels, datasets: [...bars, vendidos] },
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        plugins: { legend: { display: pocketNames.length > 1 }, title: { display: false } },
+        plugins: { legend: { position: 'bottom' } },
         scales: {
           x: { stacked: true, grid: { display: false } },
-          y: { stacked: true, ticks: { callback: v => `$${v}` } },
+          y: { stacked: true, ticks: { callback: (v: string | number) => `${v} USD` } },
         },
       },
-    };
+    } as unknown as ChartConfiguration<'bar'>;
     this.charts.push(new Chart(this.usdRef.nativeElement, config));
   }
 
   private buildCategoriesChart(months: MonthData[], labels: string[]): void {
-    // Collect all unique category names across all months (preserve first-seen order)
-    const allNames = [...new Set(months.flatMap(m => m.expenseGroups.map(g => g.name)))];
-
-    const datasets = allNames.map((name, i) => {
+    const datasets = MEDIOS.map((medio, i) => {
       const color = COLORS[i % COLORS.length];
       return {
-        label: name,
-        data: months.map(m => {
-          const group = m.expenseGroups.find(g => g.name === name);
-          return group ? group.items.reduce((s, item) => s + (item.amount || 0), 0) : 0;
-        }),
+        label: MEDIO_LABELS[medio],
+        data: months.map(m => medioTotal(m, medio)),
         borderColor: color,
         backgroundColor: color + '22',
         borderWidth: 2,
@@ -220,11 +222,10 @@ export class History implements AfterViewInit, OnDestroy {
   private buildDistributionChart(months: MonthData[]): void {
     const totals: Record<string, number> = {};
     for (const m of months) {
-      for (const g of m.expenseGroups) {
-        totals[g.name] = (totals[g.name] || 0) + g.items.reduce((s, i) => s + (i.amount || 0), 0);
-      }
+      for (const i of m.items) totals[i.name] = (totals[i.name] || 0) + (i.amount || 0);
+      for (const b of m.bankAccounts) totals[b.name] = (totals[b.name] || 0) + (b.total || 0);
     }
-    const entries = Object.entries(totals).sort((a, b) => b[1] - a[1]);
+    const entries = Object.entries(totals).filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]).slice(0, 8);
 
     const config: ChartConfiguration<'doughnut'> = {
       type: 'doughnut',

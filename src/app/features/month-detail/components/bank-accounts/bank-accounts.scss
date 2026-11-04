@@ -1,9 +1,6 @@
 .bank-card {
-  background: var(--g-surface);
-  border: 1px solid var(--g-line);
-  border-radius: 20px;
-  padding: 16px;
-  margin-bottom: 12px;
+  padding: 12px 16px 16px;
+  border-top: 1px solid var(--g-line-soft);
 }
 
 .bank-header {
@@ -17,9 +14,10 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  font-weight: 700;
-  font-size: 1.05rem;
-  color: var(--g-ink);
+  margin: 0;
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: var(--g-ink-2);
 
   mat-icon {
     font-size: 20px;

@@ -1,202 +1,67 @@
-.avatar-btn .avatar-img {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  object-fit: cover;
+.toolbar-title {
+  flex: 1;
+  margin: 0 0 0 4px;
+  font-size: 1.375rem;
+  font-weight: 700;
 }
 
 .new-month-btn {
   width: 100%;
-  height: 48px;
-  border-radius: 12px !important;
-  font-size: 1rem;
-  font-weight: 600;
+  height: 52px;
   margin-bottom: 16px;
-  background: #1F6F54 !important;
+  background: var(--g-accent) !important;
   color: #fff !important;
-  gap: 8px;
-
-  mat-icon { font-size: 20px; }
 }
 
-.form-card {
-  margin-bottom: 16px;
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  background: var(--g-surface);
+  border: 1px solid var(--g-line);
+  border-radius: 18px;
+  overflow: hidden;
 }
 
-.form-title {
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--mat-sys-on-surface);
-  margin: 0 0 12px;
-}
-
-.form-row {
+.row {
   display: flex;
-  gap: 8px;
-  margin-bottom: 0;
+  align-items: center;
+  & + & { border-top: 1px solid var(--g-line-soft); }
 }
 
-.form-actions {
+.row-link {
+  flex: 1;
+  min-width: 0;
+  min-height: 64px;
+  padding: 10px 8px 10px 16px;
   display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-  margin-top: 4px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--g-ink);
+  text-decoration: none;
+  &:hover { background: var(--g-ground); }
+  &:focus-visible { outline: 2px solid var(--g-accent); outline-offset: -2px; }
 }
 
-// ─── Empty state ──────────────────────────────────────────
-.empty-state {
-  text-align: center;
-  padding: 64px 16px;
-  color: #6B6F77;
+.row-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.row-title { font-size: 1rem; font-weight: 600; }
+.row-sub { font-size: 0.8125rem; color: var(--g-ink-2); }
+.row-usd { font-weight: 600; font-variant-numeric: tabular-nums; small { color: var(--g-ink-2); font-weight: 500; } }
 
-  mat-icon {
-    font-size: 56px;
-    width: 56px;
-    height: 56px;
-    color: #9FCDB8;
-    display: block;
-    margin: 0 auto 12px;
-  }
-
-  p {
-    margin: 0 0 4px;
-    font-size: 1.1rem;
-    font-weight: 500;
-    color: #616161;
-  }
-
-  span { font-size: 0.875rem; }
-}
-
-// ─── Month card ───────────────────────────────────────────
-.month-card {
+.del {
+  width: 44px;
+  height: 44px;
+  margin-right: 6px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--g-ink-2);
   display: flex;
-  border-radius: 14px;
-  background: #fff;
-  margin-bottom: 12px;
+  align-items: center;
+  justify-content: center;
   cursor: pointer;
-  overflow: hidden;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.08), 0 4px 12px rgba(0,0,0,0.06);
-  transition: box-shadow 0.2s, transform 0.15s;
-
-  &:hover {
-    box-shadow: 0 4px 16px rgba(31,111,84,0.18), 0 8px 24px rgba(0,0,0,0.08);
-    transform: translateY(-1px);
-  }
-
-  &:active { transform: translateY(0); }
+  &:hover { background: #FDECEA; color: #8C1D18; }
 }
 
-.month-card-accent {
-  width: 5px;
-  background: #1F6F54;
-  flex-shrink: 0;
-}
-
-.month-closed .month-card-accent {
-  background: #A8A69F;
-  opacity: 0.5;
-}
-
-.month-card-body {
-  flex: 1;
-  padding: 14px 14px 12px;
-}
-
-.month-card-top {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  margin-bottom: 12px;
-}
-
-.month-name {
-  font-size: 1.05rem;
-  font-weight: 600;
-  color: #16181D;
-  line-height: 1.3;
-}
-
-.month-tc {
-  font-size: 0.78rem;
-  color: #6B6F77;
-  margin-top: 2px;
-}
-
-.month-card-actions {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.delete-btn {
-  color: #A8A69F !important;
-  width: 32px !important;
-  height: 32px !important;
-  line-height: 32px !important;
-
-  mat-icon { font-size: 18px; }
-
-  &:hover { color: #e53935 !important; }
-}
-
-.month-usd {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  background: #E3F1EA;
-  border-radius: 8px;
-  padding: 8px 12px;
-}
-
-.usd-label {
-  font-size: 0.8rem;
-  color: #174F3D;
-  font-weight: 500;
-}
-
-.usd-amount {
-  font-size: 1.35rem;
-  font-weight: 700;
-  color: #1F6F54;
-
-  small {
-    font-size: 0.75rem;
-    font-weight: 500;
-    margin-left: 3px;
-    opacity: 0.7;
-  }
-}
-
-.month-progress {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 8px;
-}
-
-.progress-track {
-  flex: 1;
-  height: 5px;
-  background: #D3E8DD;
-  border-radius: 99px;
-  overflow: hidden;
-}
-
-.progress-fill {
-  height: 100%;
-  background: #1F6F54;
-  border-radius: 99px;
-  transition: width 0.4s ease;
-
-  &.progress-done {
-    background: #2B8A68;
-  }
-}
-
-.progress-label {
-  font-size: 0.72rem;
-  color: #6B6F77;
-  white-space: nowrap;
-  font-weight: 500;
-}
+.empty { color: var(--g-ink-2); text-align: center; padding: 32px 0; }

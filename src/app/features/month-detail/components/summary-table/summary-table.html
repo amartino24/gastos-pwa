@@ -1,77 +1,70 @@
-<div class="summary-wrap">
+<details class="calc">
+  <summary>
+    <span class="calc-title">Cálculo de venta</span>
+    <span class="calc-total">{{ totalUSD() | number:'1.2-2':'es-AR' }} USD</span>
+    <mat-icon class="chevron" aria-hidden="true">expand_more</mat-icon>
+  </summary>
 
-  @for (row of summary; track row.pocket.id) {
-    <div class="pocket-card">
-      <div class="pocket-name">{{ row.pocket.name }}</div>
-
-      <div class="rows">
-
-        <div class="row">
-          <span class="row-label">Gastos</span>
-          <span class="row-val">${{ fmt(row.totalGastos) }}</span>
+  <div class="summary-wrap">
+    @for (row of rows(); track row.medio) {
+      <div class="pocket-card">
+        <div class="pocket-name">{{ labels[row.medio] }}</div>
+        <div class="rows">
+          <div class="row">
+            <span class="row-label">Gastos</span>
+            <span class="row-val">${{ fmt(row.totalGastos) }}</span>
+          </div>
+          <div class="row editable-row">
+            <label class="row-label" [for]="'sob-' + row.medio">Sobrante</label>
+            <span class="editable-field">
+              <span class="field-prefix" aria-hidden="true">$</span>
+              <input [id]="'sob-' + row.medio" type="text" inputmode="numeric"
+                [value]="fmt(row.sobrante)" (change)="setBalance(row.medio, 'sobrante', $any($event.target))" />
+            </span>
+          </div>
+          <div class="row">
+            <span class="row-label">Diferencia</span>
+            <span class="row-val" [class.neg]="row.diferencia < 0" [class.pos]="row.diferencia >= 0">
+              ${{ fmt(row.diferencia) }}
+            </span>
+          </div>
+          <div class="row editable-row">
+            <label class="row-label" [for]="'pu-' + row.medio">Para usar</label>
+            <span class="editable-field">
+              <span class="field-prefix" aria-hidden="true">$</span>
+              <input [id]="'pu-' + row.medio" type="text" inputmode="numeric"
+                [value]="fmt(row.paraUsar)" (change)="setBalance(row.medio, 'paraUsar', $any($event.target))" />
+            </span>
+          </div>
         </div>
-
-        <div class="row editable-row">
-          <span class="row-label">Sobrante</span>
-          @if (!readonly) {
-            <label class="editable-field">
-              <span class="field-prefix">$</span>
-              <input type="text" inputmode="numeric" aria-label="Sobrante"
-                [value]="fmt(row.pocket.sobrante)"
-                (focus)="onFocus('s-' + row.pocket.id)"
-                (blur)="onBlur('s-' + row.pocket.id); updateSobrante(row.pocket, $any($event.target).value)"
-                (change)="updateSobrante(row.pocket, $any($event.target).value)"
-                />
-            </label>
-          } @else {
-            <span class="row-val">${{ fmt(row.sobrante) }}</span>
-          }
-        </div>
-
-        <div class="row">
-          <span class="row-label">Diferencia</span>
-          <span class="row-val" [class.neg]="row.diferencia < 0" [class.pos]="row.diferencia >= 0">
-            ${{ fmt(row.diferencia) }}
-          </span>
-        </div>
-
-        <div class="row editable-row">
-          <span class="row-label">Para usar</span>
-          @if (!readonly) {
-            <label class="editable-field">
-              <span class="field-prefix">$</span>
-              <input type="text" inputmode="numeric" aria-label="Para usar"
-                [value]="fmt(row.pocket.paraUsar)"
-                (focus)="onFocus('p-' + row.pocket.id)"
-                (blur)="onBlur('p-' + row.pocket.id); updateParaUsar(row.pocket, $any($event.target).value)"
-                (change)="updateParaUsar(row.pocket, $any($event.target).value)"
-                />
-            </label>
-          } @else {
-            <span class="row-val">${{ fmt(row.paraUsar) }}</span>
-          }
-        </div>
-
-      </div>
-
-      <div class="result-bar">
-        <div class="result-item">
-          <span class="result-label">ARS necesarios</span>
-          <span class="result-ars">${{ fmt(row.arsNecesarios) }}</span>
-        </div>
-        <div class="result-divider"></div>
-        <div class="result-item">
-          <span class="result-label">USD a vender</span>
-          <span class="result-usd">{{ row.usdNecesarios | number:'1.2-2':'es-AR' }}<small> USD</small></span>
+        <div class="result-bar">
+          <div class="result-item">
+            <span class="result-label">ARS necesarios</span>
+            <span class="result-ars">${{ fmt(row.arsNecesarios) }}</span>
+          </div>
+          <div class="result-divider"></div>
+          <div class="result-item">
+            <span class="result-label">USD a vender</span>
+            <span class="result-usd">{{ row.usdNecesarios | number:'1.2-2':'es-AR' }}<small> USD</small></span>
+          </div>
         </div>
       </div>
+    }
 
+    <div class="pocket-card vendidos">
+      <div class="row editable-row">
+        <label class="row-label" for="usd-vendidos">USD vendidos</label>
+        <span class="editable-field">
+          <input id="usd-vendidos" type="text" inputmode="numeric" placeholder="—"
+            [value]="month().usdVendidos ?? ''" (change)="setUsdVendidos($any($event.target))" />
+          <span class="field-suffix">USD</span>
+        </span>
+      </div>
     </div>
-  }
 
-  <div class="total-bar">
-    <span class="total-label">Total USD a vender</span>
-    <span class="total-val">{{ totalUSD | number:'1.2-2':'es-AR' }}<small> USD</small></span>
+    <div class="total-bar">
+      <span class="total-label">Total USD a vender</span>
+      <span class="total-val">{{ totalUSD() | number:'1.2-2':'es-AR' }}<small> USD</small></span>
+    </div>
   </div>
-
-</div>
+</details>
