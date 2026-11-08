@@ -1,6 +1,6 @@
 /**
  * Tests the scheduled-wake flow end to end, now:
- *   npm run test:wake [-- banco]  → schedules a real run (default galicia) + a Mac wake 3 min from now
+ *   npm run test:wake [-- banco]  → schedules a real run (default galicia) + a Mac wake ~1 min from now
  *   npm run test:wake -- result  → shows what happened and removes the test job
  * Run it in YOUR terminal: `pmset schedule` asks for your admin password.
  */
@@ -41,8 +41,9 @@ if (process.argv[2] === 'result') {
 } else {
   await ensureHome();
   await rm(logPath, { force: true });
-  const at = new Date(Date.now() + 3 * 60_000);
-  at.setSeconds(0, 0);
+  // Next whole minute that is at least 60 s away (enough to close the lid).
+  const at = new Date(Date.now() + 60_000);
+  if (at.getSeconds() > 0 || at.getMilliseconds() > 0) at.setMinutes(at.getMinutes() + 1, 0, 0);
   const tsxCli = createRequire(import.meta.url).resolve('tsx/cli');
   const bank = adapterFor(process.argv[2] ?? 'galicia').id;
   const program = [process.execPath, tsxCli, join(SCRAPER_DIR, 'src', 'scrape.ts'), '--force', `--bank=${bank}`];
@@ -79,7 +80,7 @@ if (process.argv[2] === 'result') {
 Listo. Ahora:
   1. Desenchufala si querés probar a batería.
   2. Cerrá la tapa (o menú  → Suspender) antes de las ${pad(at.getHours())}:${pad(at.getMinutes())}.
-  3. Esperá hasta las ${pad(at.getHours())}:${pad((at.getMinutes() + 3) % 60)} más o menos y abrila.
+  3. Esperá unos 2 minutos después de esa hora y abrila.
   4. Corré:  npm --prefix scraper run test:wake -- result
 `);
 }
