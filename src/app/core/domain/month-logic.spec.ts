@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { migrateState, isLegacyState } from './migration';
 import {
-  buildNewMonth, calcSummary, currentMonth, shiftIsoMonth, sortForDisplay, templateFromMonth, totalUsd, upcomingDue,
+  buildNewMonth, calcSummary, shiftIsoMonth, sortForDisplay, templateFromMonth, totalUsd, upcomingDue,
 } from './month-logic';
 import { MonthData } from '../models';
 
@@ -117,13 +117,6 @@ describe('helpers', () => {
   it('shiftIsoMonth clamps to month end', () => {
     expect(shiftIsoMonth('2026-01-31')).toBe('2026-02-28');
     expect(shiftIsoMonth('2026-12-10')).toBe('2027-01-10');
-  });
-
-  it('currentMonth prefers the calendar month, else the newest', () => {
-    const mk = (id: string) => ({ id, year: +id.slice(0, 4), month: +id.slice(5) }) as MonthData;
-    const months = [mk('2026-10'), mk('2026-11'), mk('2026-09')];
-    expect(currentMonth(months, new Date(2026, 9, 5))!.id).toBe('2026-10');
-    expect(currentMonth(months, new Date(2026, 11, 5))!.id).toBe('2026-11');
   });
 
   it('sortForDisplay puts paid last', () => {

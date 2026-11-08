@@ -1,8 +1,5 @@
 <mat-toolbar>
-  <button mat-icon-button (click)="goHome()" aria-label="Volver al mes actual">
-    <mat-icon>arrow_back</mat-icon>
-  </button>
-  <h1 class="toolbar-title">Meses</h1>
+  <h1 class="toolbar-title">Mis Gastos</h1>
   <app-menu />
 </mat-toolbar>
 
@@ -10,6 +7,8 @@
   <button mat-flat-button class="new-month-btn" type="button" (click)="newMonth()">
     <mat-icon>add</mat-icon> Nuevo mes
   </button>
+
+  <app-card-forecast />
 
   @if (months().length) {
     <ul class="list">

@@ -1,0 +1,24 @@
+{
+  "name": "gastos-scraper",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "setup": "tsx src/setup.ts",
+    "discover": "tsx src/discover.ts",
+    "scrape": "tsx src/scrape.ts",
+    "launchd:install": "tsx src/launchd.ts install",
+    "launchd:uninstall": "tsx src/launchd.ts uninstall",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "firebase-admin": "^14.5.0",
+    "playwright": "^1.65.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2",
+    "vitest": "^5.1.0"
+  }
+}

@@ -6,7 +6,10 @@
     "start": "ng serve",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test"
+    "test": "ng test",
+    "setup": "npm --prefix scraper run setup",
+    "discover": "npm --prefix scraper run discover --",
+    "scrape": "npm --prefix scraper run scrape --"
   },
   "private": true,
   "packageManager": "npm@10.9.0",

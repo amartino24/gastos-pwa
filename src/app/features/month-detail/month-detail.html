@@ -1,9 +1,7 @@
 <mat-toolbar>
-  @if (!isHome()) {
-    <button mat-icon-button (click)="goBack()" aria-label="Volver a meses">
-      <mat-icon>arrow_back</mat-icon>
-    </button>
-  }
+  <button mat-icon-button (click)="goBack()" aria-label="Volver a meses">
+    <mat-icon>arrow_back</mat-icon>
+  </button>
   <h1 class="toolbar-title">{{ month() ? title(month()!) : 'Mis Gastos' }}</h1>
   <app-menu [monthId]="month()?.id" />
 </mat-toolbar>
@@ -14,13 +12,6 @@
       <mat-icon aria-hidden="true">cloud_off</mat-icon>
       No se pudo guardar en la nube. Tus cambios quedan en este dispositivo y se reintenta con el próximo cambio.
     </div>
-  }
-
-  @if (missingCalendarMonth(); as name) {
-    <button type="button" class="banner create" (click)="newMonth()">
-      <mat-icon aria-hidden="true">add_circle</mat-icon>
-      <span>Crear {{ name }}</span>
-    </button>
   }
 
   @if (month(); as m) {
@@ -69,8 +60,8 @@
   } @else {
     <div class="empty-state">
       <mat-icon aria-hidden="true">calendar_month</mat-icon>
-      <p>{{ isHome() ? 'Todavía no hay meses' : 'Mes no encontrado' }}</p>
-      <button mat-flat-button type="button" (click)="newMonth()">Crear mes</button>
+      <p>Mes no encontrado</p>
+      <button mat-flat-button type="button" (click)="goBack()">Ver meses</button>
     </div>
   }
 </main>

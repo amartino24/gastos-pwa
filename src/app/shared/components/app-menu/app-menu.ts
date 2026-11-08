@@ -27,7 +27,7 @@ import { nextMonthToCreate } from '../../utils/months';
         <mat-divider />
       }
       <button mat-menu-item (click)="go('/')"><mat-icon>today</mat-icon>Mes actual</button>
-      <button mat-menu-item (click)="go('/months')"><mat-icon>calendar_month</mat-icon>Meses</button>
+      <button mat-menu-item (click)="go('/')"><mat-icon>calendar_month</mat-icon>Meses</button>
       <button mat-menu-item (click)="go('/history')"><mat-icon>bar_chart</mat-icon>Historial</button>
       <button mat-menu-item (click)="newMonth()"><mat-icon>add_circle_outline</mat-icon>Nuevo mes</button>
       @if (monthId()) {

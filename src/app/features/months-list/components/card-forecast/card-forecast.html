@@ -1,0 +1,97 @@
+@if (banks().length) {
+  <section class="forecast" aria-labelledby="forecast-title">
+    <h2 id="forecast-title" class="forecast-title">
+      <mat-icon aria-hidden="true">insights</mat-icon>
+      Próximo resumen
+    </h2>
+
+    @if (macOffline()) {
+      <p class="fc-offline" role="status">
+        <mat-icon aria-hidden="true">laptop_mac</mat-icon>
+        Tu Mac está apagada o dormida: se actualiza cuando vuelva a estar online.
+      </p>
+    }
+
+    @for (b of banks(); track b.bank) {
+      @if (!b.data.ok) {
+        <div class="forecast-error" role="status">
+          <mat-icon aria-hidden="true">error_outline</mat-icon>
+          <span class="forecast-error-text"><strong>{{ bankLabel[b.bank] }}</strong>: no se pudo actualizar. {{ b.data.error }}</span>
+          <app-refresh-button [bank]="b.bank" [updatedAt]="b.data.updatedAt" [now]="now" />
+        </div>
+      }
+
+      @for (card of b.data.tarjetas ?? []; track card.tarjeta) {
+        @let pm = paymentMonth(card.vencimiento);
+        @let rate = rateFor(card);
+        <article class="fc-card">
+          <header class="fc-head">
+            <div class="fc-name">
+              <span class="fc-bank">{{ bankLabel[b.bank] }}</span>
+              <span class="fc-tarjeta">{{ card.tarjeta }}</span>
+            </div>
+            <app-refresh-button [bank]="b.bank" [updatedAt]="b.data.updatedAt" [now]="now" />
+          </header>
+
+          <span class="fc-total">${{ fmtArs(total(card)) }}</span>
+          @if (card.forecast.USD) {
+            <span class="fc-hint">
+              ${{ fmtArs(card.forecast.ARS) }} + US$ {{ card.forecast.USD | number:'1.2-2':'es-AR' }}
+              @if (rate > 0) { (≈ ${{ fmtArs(card.forecast.USD * rate) }} a ${{ fmtArs(rate) }}) }
+            </span>
+          }
+
+          <div class="fc-meta">
+            @if (card.cierre) {
+              <span class="fc-date">
+                <span class="fc-date-label">Cierre</span> {{ shortDate(card.cierre) }}
+                <span class="days-badge" [class]="daysClass(card.cierre)">{{ daysLabel(card.cierre) }}</span>
+              </span>
+            }
+            @if (card.vencimiento) {
+              <span class="fc-date">
+                <span class="fc-date-label">Vence</span> {{ shortDate(card.vencimiento) }}
+                <span class="days-badge" [class]="daysClass(card.vencimiento)">{{ daysLabel(card.vencimiento) }}</span>
+              </span>
+            }
+            @if (pm) {
+              <a class="fc-month-link" [routerLink]="['/month', pm.id]">Se paga en {{ pm.name }} <mat-icon aria-hidden="true">arrow_forward</mat-icon></a>
+            }
+            @if (showNewBadge(card)) {
+              <span class="fc-new-badge">{{ card.nuevos }} {{ card.nuevos === 1 ? 'nuevo' : 'nuevos' }}</span>
+            }
+          </div>
+
+          @if (card.pendientes.length) {
+            <details class="fc-details">
+              <summary>
+                <mat-icon aria-hidden="true">expand_more</mat-icon>
+                Ver {{ card.pendientes.length }} {{ card.pendientes.length === 1 ? 'consumo' : 'consumos' }}
+              </summary>
+              <ul class="fc-list">
+                @for (m of sorted(card); track $index) {
+                  <li class="fc-mov" [class.fc-mov-new]="isNew(m, card, b.data.updatedAt)">
+                    <span class="fc-mov-date">{{ shortDate(m.fecha) }}</span>
+                    <span class="fc-mov-desc">
+                      @if (isNew(m, card, b.data.updatedAt)) {
+                        <span class="fc-dot" aria-hidden="true"></span><span class="sr-only">Nuevo: </span>
+                      }
+                      {{ m.descripcion }}
+                      @if (m.cuota) {
+                        <span class="fc-tag">{{ m.cuota.actual }}/{{ m.cuota.total }} · hasta {{ installmentEnd(pm?.id, m.cuota) }}</span>
+                      }
+                      @if (m.pendiente) {
+                        <span class="fc-tag fc-tag-warn">pendiente</span>
+                      }
+                    </span>
+                    <span class="fc-mov-amount">{{ money(m) }}</span>
+                  </li>
+                }
+              </ul>
+            </details>
+          }
+        </article>
+      }
+    }
+  </section>
+}

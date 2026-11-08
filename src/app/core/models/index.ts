@@ -25,6 +25,22 @@ export interface BankAccount {
   fechaCierre?: string;      // ISO date YYYY-MM-DD
   fechaVencimiento?: string; // ISO date YYYY-MM-DD
   statement?: BankAccountStatement;
+  /** Filled automatically from the card scraper (see core/domain/card-sync.ts). */
+  auto?: BankAccountAuto;
+}
+
+export interface BankAccountAuto {
+  bank: ScraperBank;
+  tarjeta: string;
+  updatedAt: string;
+  ars: number;
+  usd: number;
+  /** True once the bank closed the statement: ars/usd are the real amount to pay. */
+  final?: boolean;
+  minimo?: number;
+  /** Last total written automatically; if the user changed `total`, we stop overwriting it. */
+  appliedTotal?: number;
+  movimientos: ScrapedMovement[];
 }
 
 /** Money already available (sobrante) and the extra to keep (paraUsar), per medio. */
@@ -83,7 +99,77 @@ export const MONTH_NAMES = [
   'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
 ];
 
+export const SCRAPER_BANK_LABELS: Record<'santander' | 'galicia', string> = {
+  santander: 'Santander',
+  galicia: 'Galicia',
+};
+
 export const MEDIO_LABELS: Record<Medio, string> = {
   banco: 'Banco',
   efectivo: 'Efectivo',
 };
+
+// ── Card consumption scraper (written by /scraper into users/{uid}/data/cards) ──
+
+export type ScraperBank = 'santander' | 'galicia';
+
+export interface ScrapedMovement {
+  fecha: string; // YYYY-MM-DD
+  descripcion: string;
+  moneda: 'ARS' | 'USD';
+  monto: number;
+  cuota?: { actual: number; total: number };
+  id?: string;
+  pendiente?: boolean;
+  /** First day the scraper saw it. */
+  vistoDesde?: string;
+}
+
+export interface ScrapedCard {
+  tarjeta: string;
+  cierre?: string;
+  vencimiento?: string;
+  totalBanco?: { ARS: number; USD: number };
+  pendientes: ScrapedMovement[];
+  forecast: { ARS: number; USD: number; movimientos: number };
+  /** Movements first seen in the last run. */
+  nuevos: number;
+}
+
+export interface ScrapedBank {
+  updatedAt: string;
+  ok: boolean;
+  error?: string;
+  tarjetas?: ScrapedCard[];
+}
+
+/** One per card and payment month (month of `vencimiento`); frozen once the bank moves on. */
+export interface CardCycle {
+  bank: ScraperBank;
+  tarjeta: string;
+  mesPago: string; // YYYY-MM
+  cierre?: string;
+  vencimiento: string;
+  updatedAt: string;
+  /** Estimate while the cycle is open. */
+  forecast?: { ARS: number; USD: number };
+  totalBanco?: { ARS: number; USD: number };
+  pendientes?: ScrapedMovement[];
+  /** Real amount to pay, once the bank closed the statement. */
+  final?: { ARS: number; USD: number; minimo?: number };
+}
+
+export type CardsDoc = { updatedAt?: string; ciclos?: Record<string, CardCycle> } & Partial<Record<ScraperBank, ScrapedBank>>;
+
+/** Manual refresh requests (app → Mac watcher), in users/{uid}/data/scrapeRequests. */
+export interface ScrapeRequest {
+  requestedAt?: string;
+  handledRequest?: string;
+  state?: 'running' | 'idle';
+  startedAt?: string;
+  finishedAt?: string;
+}
+
+export type ScrapeRequestsDoc = { watcher?: { heartbeatAt?: string } } & Partial<Record<ScraperBank, ScrapeRequest>>;
+
+export type RefreshStatus = 'idle' | 'pending' | 'running';

@@ -42,3 +42,7 @@ __screenshots__/
 # System files
 .DS_Store
 Thumbs.db
+
+# Scraper: deps and masked discover dumps (private data lives in ~/.gastos-scraper)
+/scraper/node_modules
+/scraper/.discover

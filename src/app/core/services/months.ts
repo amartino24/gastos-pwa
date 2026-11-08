@@ -2,12 +2,13 @@ import { Injectable, signal, computed, inject } from '@angular/core';
 import { FirestoreService } from './firestore.service';
 import { DEFAULT_STATE } from './storage';
 import { migrateState } from '../domain/migration';
+import { applyCardCycles } from '../domain/card-sync';
 import {
-  buildNewMonth, calcPaidSummary, calcSummary, currentMonth, lastExchangeRate, monthId, sortMonthsDesc,
+  buildNewMonth, calcPaidSummary, calcSummary, lastExchangeRate, monthId, sortMonthsDesc,
   templateFromMonth,
 } from '../domain/month-logic';
 import {
-  AppState, BankAccount, ExpenseItem, Medio, MedioBalance, MedioSummary, MonthData, MonthSource, PaidSummary,
+  AppState, BankAccount, CardCycle, ExpenseItem, Medio, MedioBalance, MedioSummary, MonthData, MonthSource, PaidSummary,
 } from '../models';
 
 const uuid = () => crypto.randomUUID();
@@ -24,8 +25,6 @@ export class MonthsService {
   /** Newest first. */
   months = computed(() => sortMonthsDesc(this.state().months));
   template = computed(() => this.state().template);
-  /** Calendar month if it exists, else the newest. */
-  current = computed(() => currentMonth(this.state().months, new Date()));
   lastExchangeRate = computed(() => lastExchangeRate(this.state().months));
 
   async init(): Promise<void> {
@@ -124,6 +123,16 @@ export class MonthsService {
 
   removeBankAccount(id: string, accountId: string): void {
     this.patchMonth(id, m => ({ bankAccounts: m.bankAccounts.filter(b => b.id !== accountId) }));
+  }
+
+  // ── Card scraper ──────────────────────────────────────────────────────────
+
+  /** Creates payment months and fills bank accounts from scraped card cycles. Saves only on change. */
+  applyCardCycles(cycles: CardCycle[]): void {
+    const next = applyCardCycles(this.state(), cycles, uuid);
+    if (!next) return;
+    this.state.set(next);
+    this.save();
   }
 
   // ── Derived ───────────────────────────────────────────────────────────────

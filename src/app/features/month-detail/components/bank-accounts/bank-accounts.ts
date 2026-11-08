@@ -2,6 +2,7 @@ import { Component, Input, NgZone, inject } from '@angular/core';
 import { UsdPipe } from '../../../../shared/pipes/usd.pipe';
 import { formatArs, parseArs } from '../../../../shared/utils/currency';
 import { daysClass, daysLabel, shortDate } from '../../../../shared/utils/dates';
+import { AccountAutoComponent } from '../account-auto/account-auto';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
@@ -19,7 +20,7 @@ import { StatementResultDialog } from './statement-result-dialog/statement-resul
   imports: [
     CommonModule,
     MatIconModule, MatButtonModule, MatTooltipModule, MatProgressSpinnerModule,
-    MatSnackBarModule, UsdPipe,
+    MatSnackBarModule, UsdPipe, AccountAutoComponent,
   ],
   templateUrl: './bank-accounts.html',
   styleUrl: './bank-accounts.scss',

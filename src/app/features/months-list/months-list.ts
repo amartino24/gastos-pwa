@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { Router, RouterLink } from '@angular/router';
+import { RouterLink } from '@angular/router';
 import { DecimalPipe } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
@@ -11,28 +11,24 @@ import { totalUsd } from '../../core/domain/month-logic';
 import { ConfirmDialog } from '../../shared/components/confirm-dialog/confirm-dialog';
 import { NewMonthDialog } from '../../shared/components/new-month-dialog/new-month-dialog';
 import { AppMenuComponent } from '../../shared/components/app-menu/app-menu';
+import { CardForecastComponent } from './components/card-forecast/card-forecast';
 import { monthTitle, nextMonthToCreate } from '../../shared/utils/months';
 
-/** Secondary screen: all months, newest first. */
+/** Home: upcoming card statements and every month, newest first. */
 @Component({
   selector: 'app-months-list',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DecimalPipe, RouterLink, MatToolbarModule, MatButtonModule, MatIconModule, AppMenuComponent],
+  imports: [DecimalPipe, RouterLink, MatToolbarModule, MatButtonModule, MatIconModule, AppMenuComponent, CardForecastComponent],
   templateUrl: './months-list.html',
   styleUrl: './months-list.scss',
 })
 export class MonthsListComponent {
   private monthsService = inject(MonthsService);
-  private router = inject(Router);
   private dialog = inject(MatDialog);
 
   months = this.monthsService.months;
   protected readonly title = monthTitle;
   protected readonly usd = totalUsd;
-
-  goHome(): void {
-    this.router.navigate(['/']);
-  }
 
   newMonth(): void {
     this.dialog.open(NewMonthDialog, { data: nextMonthToCreate(this.months(), new Date()), width: '360px' });

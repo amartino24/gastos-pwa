@@ -9,12 +9,6 @@ export function sortMonthsDesc(months: MonthData[]): MonthData[] {
   return [...months].sort((a, b) => (b.year - a.year) || (b.month - a.month));
 }
 
-/** Month to open on: the calendar month if it exists, else the most recent one. */
-export function currentMonth(months: MonthData[], today: Date): MonthData | undefined {
-  const id = monthId(today.getFullYear(), today.getMonth() + 1);
-  return months.find(m => m.id === id) ?? sortMonthsDesc(months)[0];
-}
-
 /** Adds n months to an ISO date (YYYY-MM-DD), clamping the day to the target month's length. */
 export function shiftIsoMonth(iso: string | undefined, n = 1): string | undefined {
   if (!iso) return undefined;
