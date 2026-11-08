@@ -3,6 +3,7 @@ import { RouterOutlet } from '@angular/router';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MonthsService } from './core/services/months';
 import { CardSyncService } from './core/services/card-sync';
+import { RefreshNotifierService } from './core/services/refresh-notifier';
 import { LoginComponent } from './features/login/login';
 
 @Component({
@@ -36,8 +37,9 @@ import { LoginComponent } from './features/login/login';
 })
 export class App implements OnInit {
   private monthsService = inject(MonthsService);
-  // Instantiated here so month sync runs app-wide, not only on the home screen.
+  // Instantiated here so they run app-wide, not only on the home screen.
   private cardSync = inject(CardSyncService);
+  private refreshNotifier = inject(RefreshNotifierService);
 
   state() {
     if (this.monthsService.loading()) return 'loading';

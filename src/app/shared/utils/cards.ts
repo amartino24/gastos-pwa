@@ -1,4 +1,4 @@
-import { MONTH_NAMES, RefreshStatus, ScrapeRequest, ScrapedCard, ScrapedMovement } from '../../core/models';
+import { MONTH_NAMES, RefreshStatus, ScrapeRequest, ScrapedBank, ScrapedCard, ScrapedMovement } from '../../core/models';
 
 const SHORT_MONTHS = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
 
@@ -81,3 +81,18 @@ export const REFRESH_LABELS: Record<RefreshStatus, string> = {
   pending: 'En cola…',
   running: 'Actualizando…',
 };
+
+export type RefreshOutcome =
+  | { kind: 'ok'; nuevos: number }
+  | { kind: 'error'; error: string }
+  | { kind: 'no-data' };
+
+/**
+ * Result of a finished refresh: the scraper writes the bank entry before the watcher
+ * marks the request done, so an entry written after `startedAt` is this run's result.
+ */
+export function refreshOutcome(req: ScrapeRequest, bank: ScrapedBank | undefined): RefreshOutcome {
+  if (!bank || !req.startedAt || bank.updatedAt < req.startedAt) return { kind: 'no-data' };
+  if (!bank.ok) return { kind: 'error', error: bank.error ?? 'error desconocido' };
+  return { kind: 'ok', nuevos: (bank.tarjetas ?? []).reduce((n, t) => n + t.nuevos, 0) };
+}

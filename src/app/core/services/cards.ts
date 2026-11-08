@@ -25,6 +25,7 @@ export class CardsService {
   });
 
   readonly requests = this.requestsDoc.asReadonly();
+  readonly doc = this.cardsDoc.asReadonly();
 
   /** Every stored cycle (one per card and payment month). */
   readonly cycles = computed<CardCycle[]>(() => Object.values(this.cardsDoc()?.ciclos ?? {}));

@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { ScrapedCard } from '../../core/models';
 import {
-  formatMovementAmount, installmentEnd, isNewMovement, paymentMonth, refreshStatus, showNewBadge, updatedAgo, watcherOnline,
+  formatMovementAmount, installmentEnd, isNewMovement, paymentMonth, refreshOutcome, refreshStatus, showNewBadge, updatedAgo,
+  watcherOnline,
 } from './cards';
 
 const card = (nuevos: number, n = 3): ScrapedCard => ({
@@ -60,5 +61,13 @@ describe('card utils', () => {
     expect(updatedAgo('2026-11-08T11:55:00Z', now)).toBe('hace 5 min');
     expect(updatedAgo('2026-11-08T09:00:00Z', now)).toBe('hace 3 h');
     expect(updatedAgo('2026-11-05T12:00:00Z', now)).toBe('hace 3 d');
+  });
+
+  it('refreshOutcome reads the run result from the bank entry', () => {
+    const req = { requestedAt: 'r', handledRequest: 'r', state: 'idle' as const, startedAt: '2026-11-08T12:00:00Z' };
+    expect(refreshOutcome(req, { updatedAt: '2026-11-08T12:01:00Z', ok: true, tarjetas: [card(2)] })).toEqual({ kind: 'ok', nuevos: 2 });
+    expect(refreshOutcome(req, { updatedAt: '2026-11-08T12:01:00Z', ok: false, error: 'login' })).toEqual({ kind: 'error', error: 'login' });
+    expect(refreshOutcome(req, { updatedAt: '2026-11-08T11:00:00Z', ok: true })).toEqual({ kind: 'no-data' });
+    expect(refreshOutcome(req, undefined)).toEqual({ kind: 'no-data' });
   });
 });
