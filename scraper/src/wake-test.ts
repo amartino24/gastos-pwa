@@ -26,6 +26,12 @@ async function removeJob(): Promise<void> {
 }
 
 if (process.argv[2] === 'result') {
+  // Don't kill a run that resumed when the lid was opened: removing the job would stop it.
+  const status = await run('launchctl', ['print', `${domain}/${LABEL}`]).then(r => r.stdout, () => '');
+  if (/state = running/.test(status)) {
+    console.log('La corrida de prueba todavía está corriendo. Esperá unos segundos y volvé a correr este comando.');
+    process.exit(0);
+  }
   const log = await readFile(logPath, 'utf8').catch(() => '');
   const lines = log.split('\n').filter(l => l && !l.includes('`credentials` option'));
   console.log(lines.length ? lines.slice(-6).join('\n') : 'Todavía no hay resultado: la corrida de prueba no se ejecutó.');
