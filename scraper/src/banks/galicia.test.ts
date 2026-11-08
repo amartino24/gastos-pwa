@@ -21,7 +21,10 @@ const movements = {
         { last_four_digits: '2222', receipt_number: 'R3', transaction_date: '2026-11-03', merchant_name: 'OTRA CUENTA', installment_plan: 1, installment_number: 1, final_currency: 'ARS', final_amount: 999, credit_account: 'B2' },
       ],
       adjustments: [{ transaction_date: '2026-11-04', operation_description: 'DEVOLUCION', transaction_amount: '-200.50', transaction_currency: 'ARS', receipt_number: '9' }],
-      authorizations: [{ transaction_date: '2026-11-07', merchant_name: 'NETFLIX   ', installment_plan: 1, currency: 'USD', amount: '9.99', last_four_digits: '1111' }],
+      authorizations: [
+        { transaction_date: '2026-11-07', merchant_name: 'MC DONALD S   ', installment_plan: 1, transaction_currency: 'ARS', transaction_amount: '28500', currency: 'USD', amount: '19.46', last_four_digits: '1111' },
+        { transaction_date: '2026-11-07', merchant_name: 'NETFLIX   ', installment_plan: 1, transaction_currency: 'USD', transaction_amount: '9.99', currency: 'USD', amount: '9.99', last_four_digits: '1111' },
+      ],
       totals: { total_amount_pesos: '1500', total_amount_dollars: '0' },
     },
   ],
@@ -34,10 +37,12 @@ describe('galicia toSnapshot', () => {
     expect(s.cierre).toBe('2026-11-27');
     expect(s.vencimiento).toBe('2026-12-09');
     expect(s.totalBanco).toEqual({ ARS: 1500, USD: 0 });
-    expect(s.pendientes.map(m => m.descripcion)).toEqual(['SUPER', 'TV', 'DEVOLUCION', 'NETFLIX']);
+    expect(s.pendientes.map(m => m.descripcion)).toEqual(['SUPER', 'TV', 'DEVOLUCION', 'MC DONALD S', 'NETFLIX']);
     expect(s.pendientes[1]!.cuota).toEqual({ actual: 4, total: 6 });
-    expect(s.pendientes[3]).toMatchObject({ moneda: 'USD', monto: 9.99, pendiente: true });
-    expect(forecastNextStatement(s)).toMatchObject({ ARS: 1299.5, USD: 9.99 });
+    // pending authorizations bill in the operation's currency, not their USD equivalent
+    expect(s.pendientes[3]).toMatchObject({ moneda: 'ARS', monto: 28500, pendiente: true });
+    expect(s.pendientes[4]).toMatchObject({ moneda: 'USD', monto: 9.99, pendiente: true });
+    expect(forecastNextStatement(s)).toMatchObject({ ARS: 1299.5 + 28500, USD: 9.99 });
   });
 
   it('reads the last closed statement with its real total', () => {

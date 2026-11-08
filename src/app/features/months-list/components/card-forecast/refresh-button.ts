@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, input } from '@an
 import { MatIconModule } from '@angular/material/icon';
 import { SCRAPER_BANK_LABELS, ScraperBank } from '../../../../core/models';
 import { CardsService } from '../../../../core/services/cards';
-import { REFRESH_LABELS, isStale, refreshStatus, updatedAgo } from '../../../../shared/utils/cards';
+import { REFRESH_LABELS, isStale, refreshStatus, updatedAgo, waitingLabel } from '../../../../shared/utils/cards';
 
 /** "hace 5 min ⟳" pill: asks the Mac watcher to re-scrape one bank. */
 @Component({
@@ -15,7 +15,7 @@ import { REFRESH_LABELS, isStale, refreshStatus, updatedAgo } from '../../../../
       @if (status() === 'idle') {
         <span class="fc-updated" [class.fc-stale]="stale()">{{ ago() }}</span>
       } @else {
-        <span class="fc-updated">{{ labels[status()] }}</span>
+        <span class="fc-updated">{{ busyLabel() }}</span>
       }
       <mat-icon aria-hidden="true" [class.fc-spin]="status() !== 'idle'">refresh</mat-icon>
     </button>
@@ -46,12 +46,16 @@ export class RefreshButtonComponent {
 
   private readonly cards = inject(CardsService);
   protected readonly labels = REFRESH_LABELS;
-  protected readonly status = computed(() => refreshStatus(this.cards.requests()?.[this.bank()]));
+  private readonly request = computed(() => this.cards.requests()?.[this.bank()]);
+  protected readonly status = computed(() => refreshStatus(this.request()));
+  protected readonly busyLabel = computed(() =>
+    this.status() === 'waiting' ? waitingLabel(this.request()?.waitingUntil, this.now()) : REFRESH_LABELS[this.status()],
+  );
   protected readonly ago = computed(() => updatedAgo(this.updatedAt(), this.now()));
   protected readonly stale = computed(() => isStale(this.updatedAt(), this.now()));
   protected readonly ariaLabel = computed(() => {
     const name = SCRAPER_BANK_LABELS[this.bank()];
-    return this.status() === 'idle' ? `Actualizar ${name}, ${this.ago()}` : `${REFRESH_LABELS[this.status()]} ${name}`;
+    return this.status() === 'idle' ? `Actualizar ${name}, ${this.ago()}` : `${this.busyLabel()} ${name}`;
   });
 
   protected refresh(): void {

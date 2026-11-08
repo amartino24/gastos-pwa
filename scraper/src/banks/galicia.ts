@@ -49,8 +49,12 @@ interface Authorization {
   transaction_date: string;
   merchant_name: string;
   installment_plan: number | string;
-  currency: string;
-  amount: number | string;
+  /** The operation itself (what the statement will charge). */
+  transaction_currency: string;
+  transaction_amount: number | string;
+  /** Just its USD equivalent — not what gets billed. */
+  currency?: string;
+  amount?: number | string;
   last_four_digits: string;
 }
 interface MovementsResponse {
@@ -130,8 +134,8 @@ export function toSnapshot(card: OverviewCard, mov: MovementsResponse, today: st
     ...(block.authorizations ?? []).map(a => ({
       fecha: a.transaction_date,
       descripcion: a.merchant_name.trim(),
-      moneda: moneda(a.currency),
-      monto: num(a.amount),
+      moneda: moneda(a.transaction_currency),
+      monto: num(a.transaction_amount),
       cuota: cuota(a.installment_plan, 1),
       pendiente: true,
     })),

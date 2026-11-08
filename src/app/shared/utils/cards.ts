@@ -64,11 +64,17 @@ export function formatMovementAmount(m: ScrapedMovement): string {
   return `${m.monto < 0 ? '-' : ''}${m.moneda === 'USD' ? 'US$ ' : '$'}${abs}`;
 }
 
-/** Requested but not yet taken by the watcher → 'pending'; taken and working → 'running'. */
+/** Not yet taken → 'pending'; taken but held by the min gap → 'waiting'; working → 'running'. */
 export function refreshStatus(req: ScrapeRequest | undefined): RefreshStatus {
   if (!req) return 'idle';
   if (req.requestedAt && req.handledRequest !== req.requestedAt) return 'pending';
-  return req.state === 'running' ? 'running' : 'idle';
+  return req.state === 'running' || req.state === 'waiting' ? req.state : 'idle';
+}
+
+/** "Espera 2 min…" / "Espera 40 s…" while the watcher holds a run. */
+export function waitingLabel(waitingUntil: string | undefined, now: Date): string {
+  const s = waitingUntil ? Math.max(0, Math.ceil((Date.parse(waitingUntil) - now.getTime()) / 1000)) : 0;
+  return s >= 60 ? `Espera ${Math.ceil(s / 60)} min…` : `Espera ${s} s…`;
 }
 
 /** The watcher writes a heartbeat every 5 min; 15 min without one means the Mac is off or asleep. */
@@ -79,6 +85,7 @@ export function watcherOnline(heartbeatAt: string | undefined, now: Date): boole
 export const REFRESH_LABELS: Record<RefreshStatus, string> = {
   idle: 'Actualizar',
   pending: 'En cola…',
+  waiting: 'En espera…',
   running: 'Actualizando…',
 };
 

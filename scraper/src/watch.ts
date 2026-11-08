@@ -5,7 +5,7 @@
  * Doc shape (per bank):
  *   requestedAt     set by the app
  *   handledRequest  copy of the requestedAt we already took (no clock comparisons)
- *   state           'running' | 'idle'
+ *   state           'waiting' (min gap between runs) | 'running' | 'idle'
  *   startedAt / finishedAt
  * plus `watcher.heartbeatAt` so the app can tell whether the Mac is online.
  */
@@ -24,7 +24,7 @@ const MAX_REQUEST_AGE_MS = 12 * 3_600_000;
 interface BankRequest {
   requestedAt?: string;
   handledRequest?: string;
-  state?: 'running' | 'idle';
+  state?: 'waiting' | 'running' | 'idle';
 }
 
 const log = (msg: string) => console.log(`${new Date().toISOString()} [watch] ${msg}`);
@@ -62,12 +62,15 @@ async function pump(): Promise<void> {
   inFlight = request;
   try {
     // Mark it taken right away so the app shows "Actualizando…" and it isn't re-queued.
-    await ref.set({ [bank]: { handledRequest: request, state: 'running', startedAt: new Date().toISOString() } }, { merge: true });
     const wait = MIN_GAP_MS - (Date.now() - (lastStart.get(bank) ?? 0));
     if (wait > 0) {
+      // Taken, but waiting: the app shows a countdown instead of "Actualizando…".
+      const waitingUntil = new Date(Date.now() + wait).toISOString();
+      await ref.set({ [bank]: { handledRequest: request, state: 'waiting', waitingUntil } }, { merge: true });
       log(`${bank}: corrió hace poco, espero ${Math.ceil(wait / 1000)}s`);
       await sleep(wait);
     }
+    await ref.set({ [bank]: { handledRequest: request, state: 'running', startedAt: new Date().toISOString() } }, { merge: true });
     lastStart.set(bank, Date.now());
     log(`${bank}: pedido desde la app, corriendo`);
     const code = await runScrape(bank);

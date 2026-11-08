@@ -165,11 +165,13 @@ export type CardsDoc = { updatedAt?: string; ciclos?: Record<string, CardCycle> 
 export interface ScrapeRequest {
   requestedAt?: string;
   handledRequest?: string;
-  state?: 'running' | 'idle';
+  state?: 'waiting' | 'running' | 'idle';
+  /** While `waiting`: when the run will start. */
+  waitingUntil?: string;
   startedAt?: string;
   finishedAt?: string;
 }
 
 export type ScrapeRequestsDoc = { watcher?: { heartbeatAt?: string } } & Partial<Record<ScraperBank, ScrapeRequest>>;
 
-export type RefreshStatus = 'idle' | 'pending' | 'running';
+export type RefreshStatus = 'idle' | 'pending' | 'waiting' | 'running';

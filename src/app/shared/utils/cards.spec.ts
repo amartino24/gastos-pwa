@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { ScrapedCard } from '../../core/models';
 import {
   formatMovementAmount, installmentEnd, isNewMovement, paymentMonth, refreshOutcome, refreshStatus, showNewBadge, updatedAgo,
-  watcherOnline,
+  waitingLabel, watcherOnline,
 } from './cards';
 
 const card = (nuevos: number, n = 3): ScrapedCard => ({
@@ -47,6 +47,13 @@ describe('card utils', () => {
     expect(refreshStatus({ requestedAt: 'a' })).toBe('pending');
     expect(refreshStatus({ requestedAt: 'a', handledRequest: 'a', state: 'running' })).toBe('running');
     expect(refreshStatus({ requestedAt: 'a', handledRequest: 'a', state: 'idle' })).toBe('idle');
+    expect(refreshStatus({ requestedAt: 'a', handledRequest: 'a', state: 'waiting' })).toBe('waiting');
+  });
+
+  it('waitingLabel counts down', () => {
+    const now = new Date('2026-11-08T12:00:00Z');
+    expect(waitingLabel('2026-11-08T12:01:23Z', now)).toBe('Espera 2 min…');
+    expect(waitingLabel('2026-11-08T12:00:40Z', now)).toBe('Espera 40 s…');
   });
 
   it('watcherOnline needs a heartbeat in the last 15 min', () => {

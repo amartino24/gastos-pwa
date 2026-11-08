@@ -36,7 +36,7 @@ export class CardForecastComponent {
   );
 
   constructor() {
-    const id = setInterval(() => this.clock.set(new Date()), 30_000);
+    const id = setInterval(() => this.clock.set(new Date()), 10_000);
     inject(DestroyRef).onDestroy(() => clearInterval(id));
   }
 
