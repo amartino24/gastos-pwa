@@ -1,6 +1,6 @@
 /**
  * Tests the scheduled-wake flow end to end, now:
- *   npm run test:wake            → schedules a real Galicia run + a Mac wake 3 min from now
+ *   npm run test:wake [-- banco]  → schedules a real run (default galicia) + a Mac wake 3 min from now
  *   npm run test:wake -- result  → shows what happened and removes the test job
  * Run it in YOUR terminal: `pmset schedule` asks for your admin password.
  */
@@ -10,6 +10,7 @@ import { createRequire } from 'node:module';
 import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { promisify } from 'node:util';
+import { adapterFor } from './banks/index.js';
 import { PATHS, SCRAPER_DIR, ensureHome } from './config.js';
 
 const run = promisify(execFile);
@@ -43,7 +44,8 @@ if (process.argv[2] === 'result') {
   const at = new Date(Date.now() + 3 * 60_000);
   at.setSeconds(0, 0);
   const tsxCli = createRequire(import.meta.url).resolve('tsx/cli');
-  const program = [process.execPath, tsxCli, join(SCRAPER_DIR, 'src', 'scrape.ts'), '--force', '--bank=galicia'];
+  const bank = adapterFor(process.argv[2] ?? 'galicia').id;
+  const program = [process.execPath, tsxCli, join(SCRAPER_DIR, 'src', 'scrape.ts'), '--force', `--bank=${bank}`];
   await removeJob();
   await writeFile(plistPath, `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -64,6 +66,7 @@ if (process.argv[2] === 'result') {
   await run('launchctl', ['bootstrap', domain, plistPath]);
 
   const when = `${pad(at.getMonth() + 1)}/${pad(at.getDate())}/${at.getFullYear()} ${pad(at.getHours())}:${pad(at.getMinutes())}:00`;
+  console.log(`Prueba con ${bank}.`);
   console.log(`Programando el despertar para las ${pad(at.getHours())}:${pad(at.getMinutes())} (te pide la contraseña de tu Mac):`);
   const code = await new Promise<number>(resolve => {
     spawn('sudo', ['pmset', 'schedule', 'wake', when], { stdio: 'inherit' }).on('exit', c => resolve(c ?? 1));
