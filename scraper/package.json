@@ -10,7 +10,8 @@
     "launchd:uninstall": "tsx src/launchd.ts uninstall",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:wake": "tsx src/wake-test.ts"
+    "test:wake": "tsx src/wake-test.ts",
+    "uninstall": "tsx src/uninstall.ts"
   },
   "dependencies": {
     "firebase-admin": "^14.5.0",

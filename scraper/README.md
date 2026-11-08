@@ -59,7 +59,14 @@ A batería, macOS vuelve a dormir la Mac ~7 s después de un despertar programad
 echo "$(whoami) ALL=(root) NOPASSWD: /usr/bin/pmset disablesleep 1, /usr/bin/pmset disablesleep 0" | sudo tee /etc/sudoers.d/gastos-scraper >/dev/null && sudo chmod 440 /etc/sudoers.d/gastos-scraper && sudo visudo -c
 ```
 
-Sacarla: `sudo rm /etc/sudoers.d/gastos-scraper`. Probar todo: `npm run test:wake` (y después `npm run test:wake -- result`).
+Sacarla: `sudo rm /etc/sudoers.d/gastos-scraper`.
+
+## Desinstalar
+
+- `npm run uninstall`: saca tareas de launchd, despertar diario y permiso de sudo; deja el sueño normal. Credenciales y clave quedan.
+- `npm run uninstall -- --all`: además borra credenciales del Llavero, clave de Firebase, perfiles y logs (pide confirmación).
+
+Los datos en Firestore no se tocan. Probar todo: `npm run test:wake` (y después `npm run test:wake -- result`).
 
 ## Qué escribe en Firestore (`users/{uid}/data/cards`)
 

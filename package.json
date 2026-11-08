@@ -9,7 +9,8 @@
     "test": "ng test",
     "setup": "npm --prefix scraper run setup",
     "discover": "npm --prefix scraper run discover --",
-    "scrape": "npm --prefix scraper run scrape --"
+    "scrape": "npm --prefix scraper run scrape --",
+    "scraper:uninstall": "npm --prefix scraper run uninstall --"
   },
   "private": true,
   "packageManager": "npm@10.9.0",
