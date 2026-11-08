@@ -21,7 +21,7 @@ interface Agent {
   label: string;
   script: string;
   log: string;
-  /** Hourly scheduled run vs. always-on listener. */
+  /** Scheduled run (hourly + 07:02) vs. always-on listener. */
   keepAlive: boolean;
 }
 
@@ -35,7 +35,8 @@ function plist(a: Agent): string {
   const program = [process.execPath, tsxCli, join(SCRAPER_DIR, 'src', a.script)];
   const schedule = a.keepAlive
     ? '<key>KeepAlive</key><true/>\n  <key>ThrottleInterval</key><integer>60</integer>'
-    : '<key>StartInterval</key><integer>3600</integer>';
+    : // Hourly, plus a fixed 07:02 run right after the daily `pmset` wake at 07:00.
+      '<key>StartInterval</key><integer>3600</integer>\n  <key>StartCalendarInterval</key><dict><key>Hour</key><integer>7</integer><key>Minute</key><integer>2</integer></dict>';
   return `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -64,7 +65,11 @@ if (cmd === 'install') {
   for (const a of AGENTS) {
     await bootout(a);
     await writeFile(plistPath(a), plist(a));
-    await run('launchctl', ['bootstrap', domain, plistPath(a)]);
+    // Right after bootout launchd may still be tearing the old job down: retry once.
+    await run('launchctl', ['bootstrap', domain, plistPath(a)]).catch(async () => {
+      await new Promise(r => setTimeout(r, 1500));
+      await run('launchctl', ['bootstrap', domain, plistPath(a)]);
+    });
     console.log(`Instalado: ${a.label} → log ${join(PATHS.logs, a.log)}`);
   }
 } else if (cmd === 'uninstall') {

@@ -7,6 +7,7 @@
  *   --show       print totals to YOUR terminal (never written to the log file by launchd)
  */
 import { open, readFile, rm, stat, writeFile } from 'node:fs/promises';
+import { spawn } from 'node:child_process';
 import { join } from 'node:path';
 import { chromium, type BrowserContext, type Page } from 'playwright';
 import { ADAPTERS, adapterFor } from './banks/index.js';
@@ -150,7 +151,20 @@ async function runWithFallback(bank: BankId, tarjetas: string[], state: ScraperS
   }
 }
 
+/**
+ * Keeps the Mac awake while this run lasts (it may have been woken by the scheduled
+ * `pmset` wake and would otherwise fall back asleep mid-login). Ends with this process.
+ */
+function stayAwake(): void {
+  try {
+    spawn('caffeinate', ['-i', '-s', '-w', String(process.pid)], { stdio: 'ignore' }).unref();
+  } catch {
+    /* not macOS / not available */
+  }
+}
+
 async function main(): Promise<void> {
+  stayAwake();
   await ensureHome();
   if (!(await acquireLock())) {
     log('otra corrida en curso, salgo');
