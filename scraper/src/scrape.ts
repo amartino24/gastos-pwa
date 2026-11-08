@@ -18,6 +18,7 @@ import { forecastNextStatement } from './forecast.js';
 import { readSecret } from './keychain.js';
 import { SERIALIZE_DOM_JS, renderDom, stripQuery, type DomNode } from './sanitize.js';
 import { loadSeen, markSeen, pruneSeen, saveSeen } from './seen.js';
+import { holdSleep } from './sleep-guard.js';
 
 const MIN_HOURS_BETWEEN_RUNS = 20;
 const STALE_LOCK_MS = 30 * 60 * 1000;
@@ -170,6 +171,7 @@ async function main(): Promise<void> {
     log('otra corrida en curso, salgo');
     return;
   }
+  const sleep = await holdSleep();
   try {
     const config = await loadConfig();
     const state = await loadState();
@@ -213,6 +215,7 @@ async function main(): Promise<void> {
       }
     }
   } finally {
+    await sleep.release();
     await rm(PATHS.lock, { force: true });
   }
 }

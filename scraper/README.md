@@ -47,6 +47,20 @@ Modo de navegador: primero sin ventana; si el banco lo rechaza (Santander), rein
 
 Si algo falla, el error dice el paso y queda una captura enmascarada en `~/.gastos-scraper/logs/fail-<banco>.txt`.
 
+## Despertar diario (también a batería)
+
+```bash
+sudo pmset repeat wakeorpoweron MTWRFSU 07:00:00   # la Mac se despierta 07:00; launchd corre 07:02
+```
+
+A batería, macOS vuelve a dormir la Mac ~7 s después de un despertar programado, aunque haya `caffeinate`. Para que la corrida termine, el scraper desactiva el sueño **solo mientras corre** (`pmset disablesleep 1` → `0` al terminar, también si lo cortás; el watcher lo restaura cada 5 min si no hay corrida). Necesita esta regla de sudo, limitada a esos dos comandos exactos:
+
+```bash
+echo "$(whoami) ALL=(root) NOPASSWD: /usr/bin/pmset disablesleep 1, /usr/bin/pmset disablesleep 0" | sudo tee /etc/sudoers.d/gastos-scraper >/dev/null && sudo chmod 440 /etc/sudoers.d/gastos-scraper && sudo visudo -c
+```
+
+Sacarla: `sudo rm /etc/sudoers.d/gastos-scraper`. Probar todo: `npm run test:wake` (y después `npm run test:wake -- result`).
+
 ## Qué escribe en Firestore (`users/{uid}/data/cards`)
 
 - `<banco>`: la última lectura (tarjetas, consumos del ciclo abierto, estimado, fechas, consumos nuevos).

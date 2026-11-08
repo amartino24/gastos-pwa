@@ -13,7 +13,9 @@ import { spawn } from 'node:child_process';
 import { createRequire } from 'node:module';
 import { join } from 'node:path';
 import type { BankId } from './banks/types.js';
-import { SCRAPER_DIR, ensureHome, loadConfig } from './config.js';
+import { access } from 'node:fs/promises';
+import { PATHS, SCRAPER_DIR, ensureHome, loadConfig } from './config.js';
+import { restoreSleep } from './sleep-guard.js';
 import { firestore } from './firestore.js';
 
 const HEARTBEAT_MS = 5 * 60_000;
@@ -85,7 +87,14 @@ async function pump(): Promise<void> {
   }
 }
 
+/** If a run crashed while holding "disablesleep", give the Mac its sleep back. */
+async function sleepSafetyNet(): Promise<void> {
+  const running = await access(PATHS.lock).then(() => true, () => false);
+  if (!running && !busy) await restoreSleep();
+}
+
 async function heartbeat(): Promise<void> {
+  await sleepSafetyNet();
   await ref.set({ watcher: { heartbeatAt: new Date().toISOString() } }, { merge: true }).catch(err => {
     log(`heartbeat falló — ${err instanceof Error ? err.message : String(err)}`);
   });
