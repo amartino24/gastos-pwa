@@ -1,6 +1,6 @@
 /**
  * Daily run (launchd). Logs only counts — never amounts, merchants or credentials.
- *   --force      ignore the "already ran in the last 20h" guard
+ *   --force      ignore the "already ran today" guard
  *   --headed     show the browser (debugging selectors)
  *   --dry-run    don't write to Firestore
  *   --bank=x     only this bank
@@ -20,7 +20,8 @@ import { SERIALIZE_DOM_JS, renderDom, stripQuery, type DomNode } from './sanitiz
 import { loadSeen, markSeen, pruneSeen, saveSeen } from './seen.js';
 import { holdSleep } from './sleep-guard.js';
 
-const MIN_HOURS_BETWEEN_RUNS = 20;
+/** YYYY-MM-DD in Buenos Aires time. */
+const arDay = (d: Date) => d.toLocaleDateString('sv-SE', { timeZone: 'America/Argentina/Buenos_Aires' });
 const STALE_LOCK_MS = 30 * 60 * 1000;
 
 const args = process.argv.slice(2);
@@ -176,13 +177,14 @@ async function main(): Promise<void> {
     const config = await loadConfig();
     const state = await loadState();
     const seen = await loadSeen();
-    const today = new Date().toLocaleDateString('sv-SE', { timeZone: 'America/Argentina/Buenos_Aires' });
+    const today = arDay(new Date());
     const banks = onlyBank ? [adapterFor(onlyBank).id] : config.banks;
 
     for (const bank of banks) {
       const last = state.lastSuccess[bank];
-      if (!flag('force') && last && Date.now() - Date.parse(last) < MIN_HOURS_BETWEEN_RUNS * 3600_000) {
-        log(`${bank}: ya corrió ${last}, salteo`);
+      // Once per calendar day: the 07:00 run always happens, even after a refresh the night before.
+      if (!flag('force') && last && arDay(new Date(last)) === today) {
+        log(`${bank}: ya corrió hoy (${last}), salteo`);
         continue;
       }
       const updatedAt = new Date().toISOString();

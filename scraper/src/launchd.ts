@@ -1,6 +1,6 @@
 /**
  * Installs a user LaunchAgent: runs at login and every hour; scrape.ts itself
- * skips a bank that already succeeded in the last 20h. If the Mac sleeps,
+ * skips a bank that already succeeded today. If the Mac sleeps,
  * launchd fires once on wake — the Mac does not need to stay on.
  */
 import { execFile } from 'node:child_process';
@@ -21,7 +21,7 @@ interface Agent {
   label: string;
   script: string;
   log: string;
-  /** Scheduled run (hourly + 07:02) vs. always-on listener. */
+  /** Scheduled run (hourly + 07:00) vs. always-on listener. */
   keepAlive: boolean;
 }
 
@@ -35,8 +35,9 @@ function plist(a: Agent): string {
   const program = [process.execPath, tsxCli, join(SCRAPER_DIR, 'src', a.script)];
   const schedule = a.keepAlive
     ? '<key>KeepAlive</key><true/>\n  <key>ThrottleInterval</key><integer>60</integer>'
-    : // Hourly, plus a fixed 07:02 run right after the daily `pmset` wake at 07:00.
-      '<key>StartInterval</key><integer>3600</integer>\n  <key>StartCalendarInterval</key><dict><key>Hour</key><integer>7</integer><key>Minute</key><integer>2</integer></dict>';
+    : // Hourly, plus a fixed 07:00 run: same minute as the daily `pmset` wake, so it starts
+      // during that short wake and holds sleep off before macOS dozes again.
+      '<key>StartInterval</key><integer>3600</integer>\n  <key>StartCalendarInterval</key><dict><key>Hour</key><integer>7</integer><key>Minute</key><integer>0</integer></dict>';
   return `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">

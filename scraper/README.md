@@ -40,7 +40,7 @@ npm run launchd:install                           # automático + botones de la 
 
 `launchd:install` instala dos agentes:
 
-- `com.gastos.scraper`: al iniciar sesión y cada hora; como mucho una corrida OK cada 20 h por banco. Si la Mac dormía, corre al despertar. Log: `~/.gastos-scraper/logs/scrape.log`.
+- `com.gastos.scraper`: al iniciar sesión, a las 07:00 y cada hora; como mucho una corrida OK por día calendario por banco. Si la Mac dormía, corre al despertar. Log: `~/.gastos-scraper/logs/scrape.log`.
 - `com.gastos.scraper-watch`: siempre activo; escucha `users/{uid}/data/scrapeRequests`, que escribe el botón "Actualizar" de la app, y corre ese banco en el momento (mínimo 6 min entre corridas del mismo banco). Log: `watch.log`.
 
 Modo de navegador: primero sin ventana; si el banco lo rechaza (Santander), reintenta con una ventana real minimizada al Dock y recuerda ese modo. Cada corrida cierra sesión al final para no bloquear el próximo login.
@@ -50,7 +50,7 @@ Si algo falla, el error dice el paso y queda una captura enmascarada en `~/.gast
 ## Despertar diario (también a batería)
 
 ```bash
-sudo pmset repeat wakeorpoweron MTWRFSU 07:00:00   # la Mac se despierta 07:00; launchd corre 07:02
+sudo pmset repeat wakeorpoweron MTWRFSU 07:00:00   # la Mac se despierta 07:00 y launchd corre en ese mismo minuto
 ```
 
 A batería, macOS vuelve a dormir la Mac ~7 s después de un despertar programado, aunque haya `caffeinate`. Para que la corrida termine, el scraper desactiva el sueño **solo mientras corre** (`pmset disablesleep 1` → `0` al terminar, también si lo cortás; el watcher lo restaura cada 5 min si no hay corrida). Necesita esta regla de sudo, limitada a esos dos comandos exactos:
