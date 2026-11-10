@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { ScrapedCard } from '../../core/models';
 import {
   formatMovementAmount, installmentEnd, isNewMovement, paymentMonth, refreshOutcome, refreshStatus, showNewBadge, updatedAgo,
-  waitingLabel, watcherOnline,
+  viewFromCycle, viewFromScraped, waitingLabel, watcherOnline,
 } from './cards';
 
 const card = (nuevos: number, n = 3): ScrapedCard => ({
@@ -34,12 +34,21 @@ describe('card utils', () => {
   });
 
   it('highlights new movements only when some (not all) are new', () => {
-    expect(showNewBadge(card(0))).toBe(false);
-    expect(showNewBadge(card(3))).toBe(false); // first run: everything is "new"
-    const c = card(1);
-    expect(showNewBadge(c)).toBe(true);
-    expect(isNewMovement(c.pendientes[0], c, '2026-11-08T15:00:00Z')).toBe(true);
-    expect(isNewMovement(c.pendientes[1], c, '2026-11-08T15:00:00Z')).toBe(false);
+    const view = (nuevos: number) => viewFromScraped('galicia', { updatedAt: '2026-11-08T15:00:00Z', ok: true }, card(nuevos));
+    expect(showNewBadge(view(0))).toBe(false);
+    expect(showNewBadge(view(3))).toBe(false); // first run: everything is "new"
+    const v = view(1);
+    expect(showNewBadge(v)).toBe(true);
+    expect(isNewMovement(v.movimientos[0], v)).toBe(true);
+    expect(isNewMovement(v.movimientos[1], v)).toBe(false);
+  });
+
+  it('viewFromCycle uses the real total once closed, else the estimate', () => {
+    const base = { bank: 'santander' as const, tarjeta: 'Visa ···0070', mesPago: '2026-12', vencimiento: '2026-12-18', updatedAt: 'x' };
+    expect(viewFromCycle({ ...base, forecast: { ARS: 100, USD: 2 }, pendientes: [] }, true))
+      .toMatchObject({ ars: 100, usd: 2, final: false, current: true, movimientos: [] });
+    expect(viewFromCycle({ ...base, forecast: { ARS: 100, USD: 2 }, final: { ARS: 150, USD: 0, minimo: 15 } }, false))
+      .toMatchObject({ ars: 150, usd: 0, final: true, minimo: 15, current: false });
   });
 
   it('refreshStatus follows the request lifecycle', () => {
