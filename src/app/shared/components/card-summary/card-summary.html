@@ -1,0 +1,77 @@
+@let v = view();
+@let pm = paymentMonth(v.vencimiento);
+<article class="fc-card">
+  <header class="fc-head">
+    <div class="fc-name">
+      <span class="fc-bank">{{ bankLabel[v.bank] }}</span>
+      <span class="fc-tarjeta">{{ v.tarjeta }}</span>
+    </div>
+    @if (v.current) {
+      <app-refresh-button [bank]="v.bank" [updatedAt]="v.updatedAt" [now]="now()" />
+    } @else {
+      <span class="fc-closed">{{ v.final ? 'Resumen cerrado' : 'Ciclo cerrado' }}</span>
+    }
+  </header>
+
+  <span class="fc-total">${{ fmtArs(total()) }}</span>
+  @if (v.usd) {
+    <span class="fc-hint">
+      ${{ fmtArs(v.ars) }} + US$ {{ v.usd | number:'1.2-2':'es-AR' }}
+      @if (rate() > 0) { (≈ ${{ fmtArs(v.usd * rate()) }} a ${{ fmtArs(rate()) }}) }
+    </span>
+  }
+
+  @if (v.minimo) {
+    <span class="fc-hint">Pago mínimo ${{ fmtArs(v.minimo) }}</span>
+  }
+
+  <div class="fc-meta">
+    @if (v.cierre) {
+      <span class="fc-date">
+        <span class="fc-date-label">Cierre</span> {{ shortDate(v.cierre) }}
+        <span class="days-badge" [class]="daysClass(v.cierre)">{{ daysLabel(v.cierre) }}</span>
+      </span>
+    }
+    @if (v.vencimiento) {
+      <span class="fc-date">
+        <span class="fc-date-label">Vence</span> {{ shortDate(v.vencimiento) }}
+        <span class="days-badge" [class]="daysClass(v.vencimiento)">{{ daysLabel(v.vencimiento) }}</span>
+      </span>
+    }
+    @if (showMonthLink() && pm) {
+      <a class="fc-month-link" [routerLink]="['/month', pm.id]">Se paga en {{ pm.name }} <mat-icon aria-hidden="true">arrow_forward</mat-icon></a>
+    }
+    @if (showNewBadge(v)) {
+      <span class="fc-new-badge">{{ v.nuevos }} {{ v.nuevos === 1 ? 'nuevo' : 'nuevos' }}</span>
+    }
+  </div>
+
+  @if (v.movimientos.length) {
+    <details class="fc-details">
+      <summary>
+        <mat-icon aria-hidden="true">expand_more</mat-icon>
+        Ver {{ v.movimientos.length }} {{ v.movimientos.length === 1 ? 'consumo' : 'consumos' }}
+      </summary>
+      <ul class="fc-list">
+        @for (m of movements(); track $index) {
+          <li class="fc-mov" [class.fc-mov-new]="isNew(m, v)">
+            <span class="fc-mov-date">{{ shortDate(m.fecha) }}</span>
+            <span class="fc-mov-desc">
+              @if (isNew(m, v)) {
+                <span class="fc-dot" aria-hidden="true"></span><span class="sr-only">Nuevo: </span>
+              }
+              {{ m.descripcion }}
+              @if (m.cuota) {
+                <span class="fc-tag">{{ m.cuota.actual }}/{{ m.cuota.total }} · hasta {{ installmentEnd(pm?.id, m.cuota) }}</span>
+              }
+              @if (m.pendiente) {
+                <span class="fc-tag fc-tag-warn">pendiente</span>
+              }
+            </span>
+            <span class="fc-mov-amount">{{ money(m) }}</span>
+          </li>
+        }
+      </ul>
+    </details>
+  }
+</article>

@@ -11,6 +11,7 @@ import { MEDIOS } from '../../core/models';
 import { calcPaidSummary, totalUsd, upcomingDue } from '../../core/domain/month-logic';
 import { MedioSectionComponent } from './components/medio-section/medio-section';
 import { BankAccountsComponent } from './components/bank-accounts/bank-accounts';
+import { MonthCardsComponent } from './components/month-cards/month-cards';
 import { SummaryTableComponent } from './components/summary-table/summary-table';
 import { MonthHeaderComponent } from './components/month-header/month-header';
 import { AppMenuComponent } from '../../shared/components/app-menu/app-menu';
@@ -23,7 +24,7 @@ import { monthTitle } from '../../shared/utils/months';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     DecimalPipe, MatToolbarModule, MatButtonModule, MatIconModule,
-    MedioSectionComponent, BankAccountsComponent, SummaryTableComponent, MonthHeaderComponent, AppMenuComponent,
+    MedioSectionComponent, BankAccountsComponent, MonthCardsComponent, SummaryTableComponent, MonthHeaderComponent, AppMenuComponent,
   ],
   templateUrl: './month-detail.html',
   styleUrl: './month-detail.scss',

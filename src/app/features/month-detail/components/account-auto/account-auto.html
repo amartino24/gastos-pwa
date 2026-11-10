@@ -15,25 +15,4 @@
   @if (auto().appliedTotal !== undefined && total() !== auto().appliedTotal) {
     <span class="auto-split">{{ auto().final ? 'Total del banco' : 'Estimado actual' }}: ${{ fmtArs(pesify(auto().ars, auto().usd, exchangeRate())) }}</span>
   }
-  @if (auto().movimientos.length) {
-    <details class="auto-details">
-      <summary>
-        <mat-icon aria-hidden="true">expand_more</mat-icon>
-        {{ auto().movimientos.length }} {{ auto().movimientos.length === 1 ? 'consumo' : 'consumos' }}
-      </summary>
-      <ul class="auto-list">
-        @for (m of movements(); track $index) {
-          <li>
-            <span class="auto-date">{{ formatDate(m.fecha) }}</span>
-            <span class="auto-desc">
-              {{ m.descripcion }}
-              @if (m.cuota) { <span class="auto-tag">{{ m.cuota.actual }}/{{ m.cuota.total }} · hasta {{ installmentEnd(monthId(), m.cuota) }}</span> }
-              @if (m.pendiente) { <span class="auto-tag auto-tag-warn">pendiente</span> }
-            </span>
-            <span class="auto-amount">{{ money(m) }}</span>
-          </li>
-        }
-      </ul>
-    </details>
-  }
 </div>

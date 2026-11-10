@@ -52,7 +52,7 @@
         }
 
         @if (account.auto; as auto) {
-          <app-account-auto [auto]="auto" [total]="account.total" [exchangeRate]="exchangeRate" [monthId]="monthId" />
+          <app-account-auto [auto]="auto" [total]="account.total" [exchangeRate]="exchangeRate" />
         }
 
         @if (account.statement) {

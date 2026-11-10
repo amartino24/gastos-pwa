@@ -1,4 +1,6 @@
-import { MONTH_NAMES, RefreshStatus, ScrapeRequest, ScrapedBank, ScrapedCard, ScrapedMovement } from '../../core/models';
+import {
+  CardCycle, MONTH_NAMES, RefreshStatus, ScrapeRequest, ScrapedBank, ScrapedCard, ScrapedMovement, ScraperBank,
+} from '../../core/models';
 
 const SHORT_MONTHS = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
 
@@ -26,16 +28,52 @@ export function byDateDesc(list: readonly ScrapedMovement[]): ScrapedMovement[] 
   return [...list].sort((a, b) => b.fecha.localeCompare(a.fecha));
 }
 
+/** What a card tile shows, for the open cycle (home) or a stored one (its month). */
+export interface CardView {
+  bank: ScraperBank;
+  tarjeta: string;
+  updatedAt: string;
+  cierre?: string;
+  vencimiento?: string;
+  ars: number;
+  usd: number;
+  /** The bank closed it: amounts are the real total. */
+  final: boolean;
+  minimo?: number;
+  movimientos: ScrapedMovement[];
+  /** Movements first seen in the last run (0 when unknown). */
+  nuevos: number;
+  /** Still the open cycle: can be refreshed. */
+  current: boolean;
+}
+
+export function viewFromScraped(bank: ScraperBank, data: ScrapedBank, card: ScrapedCard): CardView {
+  return {
+    bank, tarjeta: card.tarjeta, updatedAt: data.updatedAt, cierre: card.cierre, vencimiento: card.vencimiento,
+    ars: card.forecast.ARS, usd: card.forecast.USD, final: false,
+    movimientos: card.pendientes, nuevos: card.nuevos, current: true,
+  };
+}
+
+export function viewFromCycle(cycle: CardCycle, current: boolean, nuevos = 0): CardView {
+  const amounts = cycle.final ?? cycle.forecast ?? { ARS: 0, USD: 0 };
+  return {
+    bank: cycle.bank, tarjeta: cycle.tarjeta, updatedAt: cycle.updatedAt, cierre: cycle.cierre, vencimiento: cycle.vencimiento,
+    ars: amounts.ARS, usd: amounts.USD, final: !!cycle.final, minimo: cycle.final?.minimo,
+    movimientos: cycle.pendientes ?? [], nuevos, current,
+  };
+}
+
 /**
  * New in the last run. The very first run marks everything as new, which is
  * noise, so nothing is highlighted when every movement is "new".
  */
-export function showNewBadge(card: ScrapedCard): boolean {
-  return card.nuevos > 0 && card.nuevos < card.pendientes.length;
+export function showNewBadge(view: CardView): boolean {
+  return view.nuevos > 0 && view.nuevos < view.movimientos.length;
 }
 
-export function isNewMovement(m: ScrapedMovement, card: ScrapedCard, updatedAt: string): boolean {
-  return showNewBadge(card) && m.vistoDesde === arDay(updatedAt);
+export function isNewMovement(m: ScrapedMovement, view: CardView): boolean {
+  return showNewBadge(view) && m.vistoDesde === arDay(view.updatedAt);
 }
 
 /** Payment month of a card = month of its due date: route id + display name. */

@@ -1,8 +1,8 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
-import { SCRAPER_BANK_LABELS, ScraperBank } from '../../../../core/models';
-import { CardsService } from '../../../../core/services/cards';
-import { REFRESH_LABELS, isStale, refreshStatus, updatedAgo, waitingLabel } from '../../../../shared/utils/cards';
+import { SCRAPER_BANK_LABELS, ScraperBank } from '../../../core/models';
+import { CardsService } from '../../../core/services/cards';
+import { REFRESH_LABELS, isStale, refreshStatus, updatedAgo, waitingLabel } from '../../utils/cards';
 
 /** "hace 5 min ⟳" pill: asks the Mac watcher to re-scrape one bank. */
 @Component({
