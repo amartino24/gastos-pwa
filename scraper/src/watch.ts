@@ -93,11 +93,23 @@ async function sleepSafetyNet(): Promise<void> {
   if (!running && !busy) await restoreSleep();
 }
 
+let failedHeartbeats = 0;
+
 async function heartbeat(): Promise<void> {
   await sleepSafetyNet();
-  await ref.set({ watcher: { heartbeatAt: new Date().toISOString() } }, { merge: true }).catch(err => {
-    log(`heartbeat falló — ${err instanceof Error ? err.message : String(err)}`);
-  });
+  try {
+    await ref.set({ watcher: { heartbeatAt: new Date().toISOString() } }, { merge: true });
+    failedHeartbeats = 0;
+  } catch (err) {
+    failedHeartbeats++;
+    log(`heartbeat falló — ${err instanceof Error ? err.message.split('\n')[0] : String(err)}`);
+    // After the Mac sleeps the gRPC channel can stay stuck forever (and the listener with it).
+    // Exit so launchd (KeepAlive) starts us again with a fresh connection.
+    if (failedHeartbeats >= 2 && !busy) {
+      log('conexión colgada, reinicio el watcher');
+      process.exit(1);
+    }
+  }
 }
 
 ref.onSnapshot(
