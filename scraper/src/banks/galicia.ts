@@ -1,4 +1,8 @@
+import { writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
 import type { BrowserContext, Locator, Page, Response } from 'playwright';
+import { PATHS } from '../config.js';
+import { SERIALIZE_DOM_JS, maskJson, renderDom, stripQuery, type DomNode } from '../sanitize.js';
 import type { BankAdapter, CardMovement, CardSnapshot, ClosedStatement, Moneda } from './types.js';
 
 /**
@@ -9,6 +13,7 @@ import type { BankAdapter, CardMovement, CardSnapshot, ClosedStatement, Moneda }
  * We drive the UI and read those responses.
  */
 const LOGIN_URL = 'https://onlinebanking.bancogalicia.com.ar/login';
+const PAGOS_URL = 'https://pagosyrecargas.bancogalicia.com.ar/pagos/inicio';
 const CARDS_MENU_URL = 'https://onlinebanking.bancogalicia.com.ar/navigation/menulink/390';
 const MOVEMENTS_URL = 'https://tarjetas.bancogalicia.com.ar/tarjetas/ini/movimientos';
 const TIMEOUT = 45_000;
@@ -252,6 +257,37 @@ export const galicia: BankAdapter = {
       throw new Error('galicia: la pantalla de movimientos abrió otra tarjeta (falta implementar elegirla)');
     }
     return result;
+  },
+
+  /**
+   * TEMPORARY: "Pagos y recargas" lives on another site; until its data shape is known,
+   * save a *masked* capture (DOM + JSON responses) to logs/galicia-pagos-shape.json.
+   */
+  async services(page) {
+    const ctx = page.context();
+    const xhr: unknown[] = [];
+    ctx.on('response', async r => {
+      if (!r.url().includes('bancogalicia.com.ar') || !(r.headers()['content-type'] ?? '').includes('json')) return;
+      try {
+        xhr.push({ method: r.request().method(), url: stripQuery(r.url()), body: maskJson(await r.json()) });
+      } catch {
+        /* ignore */
+      }
+    });
+    await page.goto(PAGOS_URL);
+    await page.waitForLoadState('networkidle', { timeout: 20_000 }).catch(() => {});
+    await page.waitForTimeout(3_000);
+    const dom: string[] = [];
+    for (const frame of page.frames()) {
+      const tree = (await frame.evaluate(SERIALIZE_DOM_JS).catch(() => null)) as DomNode | null;
+      if (tree) dom.push(`URL: ${stripQuery(frame.url())}\n\n${renderDom(tree)}`);
+    }
+    await writeFile(
+      join(PATHS.logs, 'galicia-pagos-shape.json'),
+      JSON.stringify({ url: stripQuery(page.url()), xhr, dom }, null, 2),
+      { mode: 0o600 },
+    );
+    return [];
   },
 
   async logout(page: Page) {

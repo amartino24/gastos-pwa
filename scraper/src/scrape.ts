@@ -133,7 +133,7 @@ async function runBank(bank: BankId, tarjetas: string[], mode: BrowserMode): Pro
     const cards = await adapter.scrape(page, { tarjetas });
     // Bills are a bonus: if they fail, keep the cards.
     const services = adapter.services
-      ? await adapter.services(page).catch(err => {
+      ? await adapter.services(livePage(ctx, page)).catch(err => {
           log(`${bank}: no se pudieron leer los pagos — ${err instanceof Error ? err.message.split('\n')[0] : String(err)}`);
           return null;
         })
