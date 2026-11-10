@@ -8,6 +8,23 @@ export interface ExpenseItem {
   amount: number;
   medio: Medio;
   paid?: boolean;
+  /** Links the expense to a bank bill (kept when copied to the next month). */
+  serviceKey?: string;
+  /** Last bill applied by the scraper (see core/domain/service-sync.ts). */
+  auto?: ExpenseAuto;
+}
+
+export interface ExpenseAuto {
+  empresa: string;
+  vencimiento: string;
+  importe: number;
+  moneda: 'ARS' | 'USD';
+  automatico: boolean;
+  updatedAt: string;
+  /** Last amount written automatically; a hand-edited amount stops being overwritten. */
+  appliedAmount?: number;
+  /** Auto-debit already marked as paid once (so unchecking it by hand sticks). */
+  paidMarked?: boolean;
 }
 
 export interface BankAccountStatement {
@@ -159,7 +176,27 @@ export interface CardCycle {
   final?: { ARS: number; USD: number; minimo?: number };
 }
 
-export type CardsDoc = { updatedAt?: string; ciclos?: Record<string, CardCycle> } & Partial<Record<ScraperBank, ScrapedBank>>;
+/** A pending bill from the bank's "Pagos y servicios" (debit cards excluded). */
+export interface ServicePayment {
+  key: string;
+  empresa: string;
+  rubro?: string;
+  vencimiento: string; // YYYY-MM-DD
+  importe: number;
+  moneda: 'ARS' | 'USD';
+  automatico: boolean;
+}
+
+export interface ScrapedServices {
+  updatedAt: string;
+  items: ServicePayment[];
+}
+
+export type CardsDoc = {
+  updatedAt?: string;
+  ciclos?: Record<string, CardCycle>;
+  servicios?: Partial<Record<ScraperBank, ScrapedServices>>;
+} & Partial<Record<ScraperBank, ScrapedBank>>;
 
 /** Manual refresh requests (app → Mac watcher), in users/{uid}/data/scrapeRequests. */
 export interface ScrapeRequest {

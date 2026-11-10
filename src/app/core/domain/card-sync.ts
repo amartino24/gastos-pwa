@@ -45,7 +45,28 @@ function applyToAccount(account: BankAccount, cycle: CardCycle, rate: number): B
   };
 }
 
-const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
+export const same = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
+
+/**
+ * The month `YYYY-MM` from `months`, created from the newest one (like "Nuevo mes")
+ * when missing. Never back-fills: returns null for a missing month older than the newest.
+ */
+export function ensureMonth(
+  months: MonthData[], ym: string, template: AppState['template'], newId: () => string,
+): { month: MonthData; created: boolean } | null {
+  const [year, month] = ym.split('-').map(Number);
+  if (!year || !month) return null;
+  const id = monthId(year, month);
+  const found = months.find(m => m.id === id);
+  if (found) return { month: found, created: false };
+  const previous = sortMonthsDesc(months)[0];
+  if (previous && id < previous.id) return null;
+  const created = buildNewMonth(
+    { year, month, exchangeRate: lastExchangeRate(months) ?? 0, source: previous ? 'previous' : 'template' },
+    previous, template, newId,
+  );
+  return { month: created, created: true };
+}
 
 /**
  * Puts every card cycle into its payment month: creates the month when missing
@@ -57,21 +78,11 @@ export function applyCardCycles(state: AppState, cycles: CardCycle[], newId: () 
   let changed = false;
 
   for (const cycle of [...cycles].sort((a, b) => a.mesPago.localeCompare(b.mesPago))) {
-    const [year, month] = cycle.mesPago.split('-').map(Number);
-    if (!year || !month) continue;
-    const id = monthId(year, month);
-
-    let target = months.find(m => m.id === id);
-    if (!target) {
-      const previous = sortMonthsDesc(months)[0];
-      // Never back-fill old months (e.g. a closed statement of a month you never created).
-      if (previous && id < previous.id) continue;
-      target = buildNewMonth(
-        { year, month, exchangeRate: lastExchangeRate(months) ?? 0, source: previous ? 'previous' : 'template' },
-        previous,
-        state.template,
-        newId,
-      );
+    const ensured = ensureMonth(months, cycle.mesPago, state.template, newId);
+    if (!ensured) continue;
+    const target = ensured.month;
+    const id = target.id;
+    if (ensured.created) {
       months = [...months, target];
       changed = true;
     }

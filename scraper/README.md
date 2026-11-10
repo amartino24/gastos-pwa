@@ -73,6 +73,10 @@ Los datos en Firestore no se tocan. Probar todo: `npm run test:wake` (y después
 - `<banco>`: la última lectura (tarjetas, consumos del ciclo abierto, estimado, fechas, consumos nuevos).
 - `ciclos.<banco>_<últimos4>_<YYYY-MM>`: un registro por tarjeta y **mes de pago** (mes del vencimiento). Mientras el ciclo está abierto se pisa el estimado; cuando el banco publica el resumen cerrado se agrega `final` con el total real. La app crea ese mes si no existe y llena la cuenta del banco.
 
+## Pagos y servicios (Santander)
+
+Después de las tarjetas, lee las facturas pendientes de "Pagos y servicios" (`obtenerPagosPendientes`), sin los resúmenes de tarjeta, y las guarda en `servicios.santander`. La app pone cada una en el mes de su vencimiento, en Banco: actualiza el gasto vinculado (o uno con el nombre de la empresa, o lo crea), respeta un monto editado a mano y marca pagado un débito automático cuando pasa el vencimiento (una sola vez). El vínculo pasa al mes siguiente aunque renombres el gasto.
+
 ## Cálculo
 
-Estimado = suma de los consumos del ciclo abierto (con cuotas del período, devoluciones y autorizaciones pendientes), ARS y USD por separado; la app pesifica los USD al dólar del mes. Cuando cierra el resumen se usa el total real del banco (Galicia; Santander pendiente).
+Estimado = suma de los consumos del ciclo abierto (con cuotas del período, devoluciones y autorizaciones pendientes), ARS y USD por separado; la app pesifica los USD al dólar del mes. Cuando cierra el resumen se usa el total real del banco (Galicia).

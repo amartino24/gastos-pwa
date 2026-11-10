@@ -89,7 +89,8 @@ export function buildNewMonth(
     year: args.year,
     month: args.month,
     exchangeRate: args.exchangeRate,
-    items: items.map(i => ({ id: newId(), name: i.name, amount: i.amount, medio: i.medio })),
+    // serviceKey travels with the expense so next month's bill updates the same one.
+    items: items.map(i => ({ id: newId(), name: i.name, amount: i.amount, medio: i.medio, ...(i.serviceKey ? { serviceKey: i.serviceKey } : {}) })),
     bankAccounts: accounts.map(b => ({
       id: newId(),
       name: b.name,
@@ -107,7 +108,7 @@ export function buildNewMonth(
 /** Snapshot of a month as the new template: unpaid items, statements at $0 without dates. */
 export function templateFromMonth(month: MonthData): Template {
   return {
-    items: month.items.map(({ id, name, amount, medio }) => ({ id, name, amount, medio })),
+    items: month.items.map(({ id, name, amount, medio, serviceKey }) => ({ id, name, amount, medio, ...(serviceKey ? { serviceKey } : {}) })),
     bankAccounts: month.bankAccounts.map(({ id, name }) => ({ id, name, total: 0 })),
     paraUsar: { banco: month.balances.banco.paraUsar, efectivo: month.balances.efectivo.paraUsar },
   };

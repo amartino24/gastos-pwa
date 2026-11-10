@@ -1,10 +1,6 @@
 import type { Locator, Page, Response } from 'playwright';
-import { writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
-import { PATHS } from '../config.js';
-import { parseDate } from '../parse.js';
-import { maskJson } from '../sanitize.js';
-import type { BankAdapter, CardMovement, CardSnapshot } from './types.js';
+import { parseArAmount, parseDate } from '../parse.js';
+import type { BankAdapter, CardMovement, CardSnapshot, ServicePayment } from './types.js';
 
 /**
  * Santander "Online Banking Personas". The SPA loads card data from its own
@@ -14,6 +10,7 @@ import type { BankAdapter, CardMovement, CardSnapshot } from './types.js';
 const BASE = 'https://www2.personas.santander.com.ar/obp-webapp/angular/#!';
 const LOGIN_URL = `${BASE}/login`;
 const CARDS_URL = `${BASE}/cards/`;
+const PAGOS_URL = `${BASE}/pagos`;
 const TIMEOUT = 45_000;
 
 interface ApiCard {
@@ -49,26 +46,38 @@ async function step<T>(name: string, fn: () => Promise<T>): Promise<T> {
   }
 }
 
-/**
- * TEMPORARY: the home calls obtenerSaldoTarjeta once per card (balance + closing/due
- * dates, likely the last closed statement). Save the *masked* request/response shapes
- * so the closed-statement total can be mapped to the right card. Remove once done.
- */
-function captureSaldoShape(page: Page): void {
-  const seen: unknown[] = [];
-  page.on('response', async r => {
-    if (!pathOf(r).endsWith('/home/obtenerSaldoTarjeta')) return;
-    try {
-      seen.push({ request: maskJson(r.request().postDataJSON()), response: maskJson(await r.json()) });
-      await writeFile(join(PATHS.logs, 'santander-saldo-shape.json'), JSON.stringify(seen, null, 2), { mode: 0o600 });
-    } catch {
-      /* ignore */
-    }
-  });
-}
-
 const logoutButton = (page: Page) =>
   page.locator('#cerrar-sesion, [aria-label="Cerrar sesión"], [aria-label="Salir"], button:has-text("Cerrar sesión")').first();
+
+export interface ApiPendingPayment {
+  codigoEmpresa?: string;
+  codigoClienteEmpresa?: string;
+  nombreEmpresa?: string;
+  vencimiento?: string; // dd/mm/yyyy
+  importe?: string;
+  moneda?: string | null; // "$" | "U$S" | null
+  pagoAutomatico?: boolean;
+  isTarjetas?: boolean;
+  empresa?: { nombreFantasia?: string; rubroFantasia?: string } | null;
+}
+
+const clean = (s: string | undefined) => (s ?? '').replace(/\s+/g, ' ').trim();
+
+export function toServicePayment(p: ApiPendingPayment): ServicePayment[] {
+  const vencimiento = p.vencimiento ? parseDate(p.vencimiento) : null;
+  const empresa = clean(p.empresa?.nombreFantasia) || clean(p.nombreEmpresa);
+  if (!vencimiento || !empresa) return [];
+  const cliente = clean(p.codigoClienteEmpresa);
+  return [{
+    key: `santander:${clean(p.codigoEmpresa) || empresa}:${cliente.slice(-6)}`,
+    empresa,
+    rubro: clean(p.empresa?.rubroFantasia) || undefined,
+    vencimiento,
+    importe: parseArAmount(p.importe),
+    moneda: /U\$S|USD/i.test(p.moneda ?? '') ? 'USD' : 'ARS',
+    automatico: !!p.pagoAutomatico,
+  }];
+}
 
 const pathOf = (r: Response) => new URL(r.url()).pathname;
 const isCardsList = (r: Response) => r.request().method() === 'GET' && /\/bff\/cards\/cards\/?$/.test(pathOf(r));
@@ -109,7 +118,6 @@ export const santander: BankAdapter = {
   ],
 
   async login(page, creds) {
-    captureSaldoShape(page);
     // Visible labels aren't bound to the inputs, so getByLabel doesn't work here.
     const password = page.locator('input#clave');
     const user = page.locator('input#datosusuario');
@@ -144,6 +152,22 @@ export const santander: BankAdapter = {
       throw new Error(`login rechazado por el banco (estado ${String(body.estadoRespuesta ?? '?').slice(0, 12)})`);
     }
     await step('login: esperando el home', () => page.waitForURL(/#!\/(home|cards)/, { timeout: TIMEOUT }));
+  },
+
+  /** Pending bills from "Pagos y servicios" (card statements excluded: cards are scraped apart). */
+  async services(page) {
+    const pending = page.waitForResponse(r => pathOf(r).endsWith('/pagos/obtenerPagosPendientes'), { timeout: 20_000 });
+    pending.catch(() => {});
+    await page.evaluate(hash => { window.location.hash = hash; }, PAGOS_URL.split('#')[1]!);
+    let res = await pending.catch(() => null);
+    if (!res) {
+      const retry = page.waitForResponse(r => pathOf(r).endsWith('/pagos/obtenerPagosPendientes'), { timeout: TIMEOUT });
+      retry.catch(() => {});
+      await page.goto(PAGOS_URL);
+      res = await step('pagos: pendientes', () => retry);
+    }
+    const body = (await res.json()) as { respuesta?: { pagosPendientesConVencimiento?: ApiPendingPayment[] } };
+    return (body.respuesta?.pagosPendientesConVencimiento ?? []).filter(p => !p.isTarjetas).flatMap(toServicePayment);
   },
 
   async logout(page) {

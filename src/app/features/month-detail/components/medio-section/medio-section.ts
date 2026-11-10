@@ -9,6 +9,7 @@ import { AddItemDialog } from '../../../../shared/components/add-item-dialog/add
 import { ConfirmDialog } from '../../../../shared/components/confirm-dialog/confirm-dialog';
 import { UsdPipe } from '../../../../shared/pipes/usd.pipe';
 import { formatArs, parseArs } from '../../../../shared/utils/currency';
+import { shortDate } from '../../../../shared/utils/dates';
 
 /** One payment-method section (Banco or Efectivo): its items, totals and, for Banco, the projected cards. */
 @Component({
@@ -26,6 +27,7 @@ export class MedioSectionComponent {
   private dialog = inject(MatDialog);
 
   protected readonly fmtArs = formatArs;
+  protected readonly shortDate = shortDate;
   label = computed(() => MEDIO_LABELS[this.medio()]);
   otherLabel = computed(() => MEDIO_LABELS[this.medio() === 'banco' ? 'efectivo' : 'banco']);
   items = computed(() => sortForDisplay(itemsOf(this.month(), this.medio())));

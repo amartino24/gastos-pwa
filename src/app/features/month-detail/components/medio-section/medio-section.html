@@ -17,8 +17,19 @@
       <li class="item" [class.paid]="item.paid">
         <input type="checkbox" class="check" [checked]="item.paid" (change)="togglePaid(item)"
           [attr.aria-label]="(item.paid ? 'Marcar pendiente: ' : 'Marcar pagado: ') + item.name" />
-        <input class="name" [value]="item.name" aria-label="Nombre del gasto"
-          (blur)="rename(item, $any($event.target).value)" />
+        <div class="name-col">
+          <input class="name" [value]="item.name" aria-label="Nombre del gasto"
+            (blur)="rename(item, $any($event.target).value)" />
+          @if (item.auto; as auto) {
+            <span class="auto-hint">
+              <mat-icon aria-hidden="true">sync</mat-icon>
+              {{ auto.empresa }} · vence {{ shortDate(auto.vencimiento) }}{{ auto.automatico ? ' · débito automático' : '' }}
+              @if (auto.appliedAmount !== undefined && item.amount !== auto.appliedAmount) {
+                · factura {{ auto.moneda === 'USD' ? 'US$' : '$' }}{{ fmtArs(auto.importe) }}
+              }
+            </span>
+          }
+        </div>
         <div class="amount">
           <label class="amount-field">
             <span aria-hidden="true">$</span>

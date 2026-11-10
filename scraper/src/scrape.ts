@@ -11,9 +11,9 @@ import { spawn } from 'node:child_process';
 import { join } from 'node:path';
 import { chromium, type BrowserContext, type Page } from 'playwright';
 import { ADAPTERS, adapterFor } from './banks/index.js';
-import type { BankId, CardSnapshot, Credentials } from './banks/types.js';
+import type { BankId, CardSnapshot, Credentials, ServicePayment } from './banks/types.js';
 import { PATHS, ensureHome, loadConfig, loadState, saveState, type ScraperState } from './config.js';
-import { writeBank, type CardResult } from './firestore.js';
+import { writeBank, writeServices, type CardResult } from './firestore.js';
 import { forecastNextStatement } from './forecast.js';
 import { readSecret } from './keychain.js';
 import { SERIALIZE_DOM_JS, renderDom, stripQuery, type DomNode } from './sanitize.js';
@@ -99,7 +99,13 @@ async function minimizeWindow(ctx: BrowserContext, page: Page): Promise<void> {
   }
 }
 
-async function runBank(bank: BankId, tarjetas: string[], mode: BrowserMode): Promise<CardSnapshot[]> {
+interface BankRun {
+  cards: CardSnapshot[];
+  /** undefined: the bank doesn't list bills; null: listing them failed (cards still OK). */
+  services?: ServicePayment[] | null;
+}
+
+async function runBank(bank: BankId, tarjetas: string[], mode: BrowserMode): Promise<BankRun> {
   const adapter = ADAPTERS[bank];
   const ctx = await chromium.launchPersistentContext(PATHS.profile(bank), {
     // Full Chromium ("new headless" when headless): the default headless shell is easy for bank anti-fraud to spot.
@@ -124,7 +130,15 @@ async function runBank(bank: BankId, tarjetas: string[], mode: BrowserMode): Pro
   try {
     await page.goto(adapter.startUrl);
     await adapter.login(page, await credentialsFor(bank));
-    return await adapter.scrape(page, { tarjetas });
+    const cards = await adapter.scrape(page, { tarjetas });
+    // Bills are a bonus: if they fail, keep the cards.
+    const services = adapter.services
+      ? await adapter.services(page).catch(err => {
+          log(`${bank}: no se pudieron leer los pagos — ${err instanceof Error ? err.message.split('\n')[0] : String(err)}`);
+          return null;
+        })
+      : undefined;
+    return { cards, services };
   } catch (err) {
     await dumpFailure(livePage(ctx, page), bank);
     throw err;
@@ -138,7 +152,7 @@ async function runBank(bank: BankId, tarjetas: string[], mode: BrowserMode): Pro
  * Tries the mode that worked last time for this bank (headless by default); if it
  * fails, retries once off-screen and remembers whichever mode succeeded.
  */
-async function runWithFallback(bank: BankId, tarjetas: string[], state: ScraperState): Promise<CardSnapshot[]> {
+async function runWithFallback(bank: BankId, tarjetas: string[], state: ScraperState): Promise<BankRun> {
   if (flag('headed')) return runBank(bank, tarjetas, 'headed');
   const first: BrowserMode = state.mode?.[bank] ?? 'headless';
   try {
@@ -189,11 +203,12 @@ async function main(): Promise<void> {
       }
       const updatedAt = new Date().toISOString();
       try {
-        const snapshots = await runWithFallback(bank, config.tarjetas?.[bank] ?? [], state);
+        const { cards: snapshots, services } = await runWithFallback(bank, config.tarjetas?.[bank] ?? [], state);
         const nuevos = markSeen(seen, bank, snapshots, today);
         const tarjetas: CardResult[] = snapshots.map((c, i) => ({ ...c, forecast: forecastNextStatement(c), nuevos: nuevos[i]! }));
         if (!flag('dry-run')) {
           await writeBank(config.uid, bank, { updatedAt, ok: true, tarjetas });
+          if (services) await writeServices(config.uid, bank, { updatedAt, items: services });
           pruneSeen(seen, today);
           await saveSeen(seen);
           state.lastSuccess[bank] = updatedAt;
@@ -201,7 +216,8 @@ async function main(): Promise<void> {
         }
         const movs = tarjetas.reduce((n, t) => n + t.pendientes.length, 0);
         const nuevosTotal = nuevos.reduce((a, b) => a + b, 0);
-        log(`${bank}: OK — ${tarjetas.length} tarjeta(s), ${movs} consumo(s), ${nuevosTotal} nuevo(s)${flag('dry-run') ? ' [dry-run]' : ''}`);
+        const pagos = services ? `, ${services.length} pago(s)` : '';
+        log(`${bank}: OK — ${tarjetas.length} tarjeta(s), ${movs} consumo(s), ${nuevosTotal} nuevo(s)${pagos}${flag('dry-run') ? ' [dry-run]' : ''}`);
         if (flag('show')) {
           for (const t of tarjetas) {
             console.log(

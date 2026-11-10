@@ -2,7 +2,7 @@ import { Injectable, computed, signal } from '@angular/core';
 import { onAuthStateChanged } from 'firebase/auth';
 import { doc, onSnapshot, setDoc, type Unsubscribe } from 'firebase/firestore';
 import { firebaseAuth, firebaseDb } from './firebase';
-import { CardCycle, CardsDoc, ScrapeRequestsDoc, ScrapedBank, ScraperBank } from '../models';
+import { CardCycle, CardsDoc, ScrapeRequestsDoc, ScrapedBank, ScrapedServices, ScraperBank } from '../models';
 
 const BANKS: readonly ScraperBank[] = ['santander', 'galicia'];
 
@@ -29,6 +29,11 @@ export class CardsService {
 
   /** Every stored cycle (one per card and payment month). */
   readonly cycles = computed<CardCycle[]>(() => Object.values(this.cardsDoc()?.ciclos ?? {}));
+
+  /** Pending bills per bank (latest read of each). */
+  readonly services = computed<ScrapedServices[]>(() =>
+    Object.values(this.cardsDoc()?.servicios ?? {}).filter((s): s is ScrapedServices => !!s),
+  );
 
   constructor() {
     onAuthStateChanged(firebaseAuth, user => {

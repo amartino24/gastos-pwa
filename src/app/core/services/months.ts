@@ -3,12 +3,13 @@ import { FirestoreService } from './firestore.service';
 import { DEFAULT_STATE } from './storage';
 import { migrateState } from '../domain/migration';
 import { applyCardCycles } from '../domain/card-sync';
+import { applyServices } from '../domain/service-sync';
 import {
   buildNewMonth, calcPaidSummary, calcSummary, lastExchangeRate, monthId, sortMonthsDesc,
   templateFromMonth,
 } from '../domain/month-logic';
 import {
-  AppState, BankAccount, CardCycle, ExpenseItem, Medio, MedioBalance, MedioSummary, MonthData, MonthSource, PaidSummary,
+  AppState, BankAccount, CardCycle, ExpenseItem, ScrapedServices, Medio, MedioBalance, MedioSummary, MonthData, MonthSource, PaidSummary,
 } from '../models';
 
 const uuid = () => crypto.randomUUID();
@@ -127,11 +128,21 @@ export class MonthsService {
 
   // ── Card scraper ──────────────────────────────────────────────────────────
 
-  /** Creates payment months and fills bank accounts from scraped card cycles. Saves only on change. */
-  applyCardCycles(cycles: CardCycle[]): void {
-    const next = applyCardCycles(this.state(), cycles, uuid);
-    if (!next) return;
-    this.state.set(next);
+  /**
+   * Applies what the scraper found: card cycles into bank accounts and pending bills
+   * into expenses, each in its payment month (created if missing). Saves only on change.
+   */
+  applyScraped(cycles: CardCycle[], services: ScrapedServices[], today: string): void {
+    let state = this.state();
+    let changed = false;
+    const withCards = applyCardCycles(state, cycles, uuid);
+    if (withCards) { state = withCards; changed = true; }
+    for (const s of services) {
+      const next = applyServices(state, s.items, s.updatedAt, uuid, today);
+      if (next) { state = next; changed = true; }
+    }
+    if (!changed) return;
+    this.state.set(state);
     this.save();
   }
 

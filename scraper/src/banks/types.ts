@@ -46,6 +46,19 @@ export interface CardSnapshot {
   cerrado?: ClosedStatement;
 }
 
+/** A pending bill (utilities, phone, etc.) from the bank's "Pagos y servicios". */
+export interface ServicePayment {
+  /** Stable per company + customer account, to update the same expense month after month. */
+  key: string;
+  empresa: string;
+  rubro?: string;
+  vencimiento: string; // YYYY-MM-DD
+  importe: number;
+  moneda: Moneda;
+  /** Debited automatically on the due date. */
+  automatico: boolean;
+}
+
 export interface ScrapeOptions {
   /** Last 4 digits to keep; empty = every credit card. */
   tarjetas: string[];
@@ -66,6 +79,8 @@ export interface BankAdapter {
   credentialFields: readonly CredentialField[];
   login(page: Page, creds: Credentials): Promise<void>;
   scrape(page: Page, opts: ScrapeOptions): Promise<CardSnapshot[]>;
+  /** Pending bills, when the bank lists them. Runs after `scrape`, same session. */
+  services?(page: Page): Promise<ServicePayment[]>;
   /** Best effort; some banks block new logins while a session stays open. */
   logout?(page: Page): Promise<void>;
 }
