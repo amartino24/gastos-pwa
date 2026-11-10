@@ -13,7 +13,8 @@ import type { BankAdapter, CardMovement, CardSnapshot, ClosedStatement, Moneda }
  * We drive the UI and read those responses.
  */
 const LOGIN_URL = 'https://onlinebanking.bancogalicia.com.ar/login';
-const PAGOS_URL = 'https://pagosyrecargas.bancogalicia.com.ar/pagos/inicio';
+const HOME_URL = 'https://onlinebanking.bancogalicia.com.ar/navigation/menulink/1';
+const PAGOS_HOST = 'pagosyrecargas.bancogalicia.com.ar';
 const CARDS_MENU_URL = 'https://onlinebanking.bancogalicia.com.ar/navigation/menulink/390';
 const MOVEMENTS_URL = 'https://tarjetas.bancogalicia.com.ar/tarjetas/ini/movimientos';
 const TIMEOUT = 45_000;
@@ -274,7 +275,14 @@ export const galicia: BankAdapter = {
         /* ignore */
       }
     });
-    await page.goto(PAGOS_URL);
+    // pagosyrecargas.* only accepts sessions handed over from the banking home's menu
+    // (a direct goto lands on "Sesión expirada"), so go home and follow the Pagos link.
+    await page.goto(HOME_URL);
+    const link = page.locator(`a[href*="pagosyrecargas"], a:text-matches("^\\s*Pagos", "i")`).first();
+    await step('pagos: link en el menú', () => link.waitFor({ state: 'attached', timeout: 20_000 }));
+    await link.evaluate(el => (el as HTMLElement).click());
+    const pagosPage = await step('pagos: abriendo pagos y recargas', () => waitForPage(ctx, PAGOS_HOST));
+    page = pagosPage;
     await page.waitForLoadState('networkidle', { timeout: 20_000 }).catch(() => {});
     await page.waitForTimeout(3_000);
     const dom: string[] = [];

@@ -10,7 +10,6 @@ import type { BankAdapter, CardMovement, CardSnapshot, ServicePayment } from './
 const BASE = 'https://www2.personas.santander.com.ar/obp-webapp/angular/#!';
 const LOGIN_URL = `${BASE}/login`;
 const CARDS_URL = `${BASE}/cards/`;
-const PAGOS_URL = `${BASE}/pagos`;
 const TIMEOUT = 45_000;
 
 interface ApiCard {
@@ -156,16 +155,16 @@ export const santander: BankAdapter = {
 
   /** Pending bills from "Pagos y servicios" (card statements excluded: cards are scraped apart). */
   async services(page) {
-    const pending = page.waitForResponse(r => pathOf(r).endsWith('/pagos/obtenerPagosPendientes'), { timeout: 20_000 });
+    // Like a person: back to the home (logo) and the "Pago de servicios" quick access.
+    // A hash change or a full reload doesn't load this section reliably.
+    const pending = page.waitForResponse(r => pathOf(r).endsWith('/pagos/obtenerPagosPendientes'), { timeout: TIMEOUT });
     pending.catch(() => {});
-    await page.evaluate(hash => { window.location.hash = hash; }, PAGOS_URL.split('#')[1]!);
-    let res = await pending.catch(() => null);
-    if (!res) {
-      const retry = page.waitForResponse(r => pathOf(r).endsWith('/pagos/obtenerPagosPendientes'), { timeout: TIMEOUT });
-      retry.catch(() => {});
-      await page.goto(PAGOS_URL);
-      res = await step('pagos: pendientes', () => retry);
-    }
+    await step('pagos: volver al inicio', () => page.locator('[aria-label="Volver al inicio"]').first().click({ timeout: 10_000 }));
+    await page.waitForTimeout(1_500 + Math.random() * 1_000);
+    await step('pagos: acceso "Pago de servicios"', () =>
+      page.getByText(/^\s*Pago de servicios\s*$/i).first().click({ timeout: 20_000 }),
+    );
+    const res = await step('pagos: pendientes', () => pending);
     const body = (await res.json()) as { respuesta?: { pagosPendientesConVencimiento?: ApiPendingPayment[] } };
     return (body.respuesta?.pagosPendientesConVencimiento ?? []).filter(p => !p.isTarjetas).flatMap(toServicePayment);
   },
