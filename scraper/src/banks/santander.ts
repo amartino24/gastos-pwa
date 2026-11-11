@@ -1,4 +1,5 @@
 import type { Locator, Page, Response } from 'playwright';
+import { captureMasked } from '../capture.js';
 import { parseArAmount, parseDate } from '../parse.js';
 import type { BankAdapter, CardMovement, CardSnapshot, ServicePayment } from './types.js';
 
@@ -167,6 +168,14 @@ export const santander: BankAdapter = {
     const res = await step('pagos: pendientes', () => pending);
     const body = (await res.json()) as { respuesta?: { pagosPendientesConVencimiento?: ApiPendingPayment[] } };
     return (body.respuesta?.pagosPendientesConVencimiento ?? []).filter(p => !p.isTarjetas).flatMap(toServicePayment);
+  },
+
+  async captureAccounts(page) {
+    await captureMasked(page, 'santander-cuentas-shape', async () => {
+      await page.locator('[aria-label="Volver al inicio"]').first().click({ timeout: 10_000 });
+      await page.waitForTimeout(2_000);
+      await page.getByText(/^\s*Ver movimientos\s*$/i).first().click({ timeout: 20_000 });
+    });
   },
 
   async logout(page) {

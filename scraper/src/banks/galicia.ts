@@ -1,6 +1,7 @@
 import { writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { BrowserContext, Locator, Page, Response } from 'playwright';
+import { captureMasked } from '../capture.js';
 import { PATHS } from '../config.js';
 import { SERIALIZE_DOM_JS, maskJson, renderDom, stripQuery, type DomNode } from '../sanitize.js';
 import type { BankAdapter, CardMovement, CardSnapshot, ClosedStatement, Moneda } from './types.js';
@@ -14,6 +15,7 @@ import type { BankAdapter, CardMovement, CardSnapshot, ClosedStatement, Moneda }
  */
 const LOGIN_URL = 'https://onlinebanking.bancogalicia.com.ar/login';
 const HOME_URL = 'https://onlinebanking.bancogalicia.com.ar/navigation/menulink/1';
+const ACCOUNTS_URL = 'https://onlinebanking.bancogalicia.com.ar/navigation/menulink/2';
 const PAGOS_HOST = 'pagosyrecargas.bancogalicia.com.ar';
 const CARDS_MENU_URL = 'https://onlinebanking.bancogalicia.com.ar/navigation/menulink/390';
 const MOVEMENTS_URL = 'https://tarjetas.bancogalicia.com.ar/tarjetas/ini/movimientos';
@@ -296,6 +298,12 @@ export const galicia: BankAdapter = {
       { mode: 0o600 },
     );
     return [];
+  },
+
+  async captureAccounts(page) {
+    await captureMasked(page, 'galicia-cuentas-shape', async () => {
+      await page.goto(ACCOUNTS_URL);
+    });
   },
 
   async logout(page: Page) {

@@ -81,6 +81,8 @@ export interface BankAdapter {
   scrape(page: Page, opts: ScrapeOptions): Promise<CardSnapshot[]>;
   /** Pending bills, when the bank lists them. Runs after `scrape`, same session. */
   services?(page: Page): Promise<ServicePayment[]>;
+  /** TEMPORARY: masked capture of the accounts section, to learn its API. */
+  captureAccounts?(page: Page): Promise<void>;
   /** Best effort; some banks block new logins while a session stays open. */
   logout?(page: Page): Promise<void>;
 }

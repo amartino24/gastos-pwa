@@ -138,6 +138,11 @@ async function runBank(bank: BankId, tarjetas: string[], mode: BrowserMode): Pro
           return null;
         })
       : undefined;
+    if (adapter.captureAccounts) {
+      await adapter.captureAccounts(livePage(ctx, page)).catch(err =>
+        log(`${bank}: captura de cuentas falló — ${err instanceof Error ? err.message.split('\n')[0] : String(err)}`),
+      );
+    }
     return { cards, services };
   } catch (err) {
     await dumpFailure(livePage(ctx, page), bank);
