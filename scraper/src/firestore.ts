@@ -49,6 +49,12 @@ export async function writeBank(uid: string, bank: BankId, entry: BankCardsDoc):
   await ref.set({ updatedAt: entry.updatedAt, [bank]: entry, ...(Object.keys(ciclos).length ? { ciclos } : {}) }, { merge: true });
 }
 
+/** Account balances per bank, in `saldos.<bank>` (latest read). */
+export async function writeBalance(uid: string, bank: BankId, entry: { updatedAt: string; ARS: number; USD: number }): Promise<void> {
+  const ref = (await firestore()).doc(`users/${uid}/data/cards`);
+  await ref.set({ saldos: { [bank]: entry } }, { merge: true });
+}
+
 /**
  * Pending bills per bank, in `servicios.<bank>` of the same doc. Each run replaces the
  * list (paid bills drop off it); the app keeps what it already put into months.

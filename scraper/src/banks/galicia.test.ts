@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { forecastNextStatement } from '../forecast.js';
-import { toSnapshot } from './galicia.js';
+import { parseGaliciaBalances, toSnapshot } from './galicia.js';
 
 const card = {
   last_digits: '1111',
@@ -57,5 +57,12 @@ describe('galicia toSnapshot', () => {
     const s = toSnapshot(card, movements, '2026-11-28');
     expect(s.cierre).toBe('2026-12-26');
     expect(s.vencimiento).toBe('2027-01-08');
+  });
+});
+
+describe('parseGaliciaBalances', () => {
+  it('sums each currency from the accessible labels', () => {
+    expect(parseGaliciaBalances(['Saldo en Pesos 12.345,67', 'Saldo en Dolares 1,50', 'Saldo en Pesos 100'])).toEqual({ ARS: 12445.67, USD: 1.5 });
+    expect(parseGaliciaBalances(['Saldo en Pesos -500,00'])).toEqual({ ARS: -500, USD: 0 });
   });
 });

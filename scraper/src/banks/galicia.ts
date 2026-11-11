@@ -2,9 +2,10 @@ import { writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { BrowserContext, Locator, Page, Response } from 'playwright';
 import { captureMasked } from '../capture.js';
+import { parseArAmount } from '../parse.js';
 import { PATHS } from '../config.js';
 import { SERIALIZE_DOM_JS, maskJson, renderDom, stripQuery, type DomNode } from '../sanitize.js';
-import type { BankAdapter, CardMovement, CardSnapshot, ClosedStatement, Moneda } from './types.js';
+import type { AccountBalance, BankAdapter, CardMovement, CardSnapshot, ClosedStatement, Moneda } from './types.js';
 
 /**
  * Galicia Online Banking. Login on onlinebanking.*, card data on tarjetas.*,
@@ -14,8 +15,8 @@ import type { BankAdapter, CardMovement, CardSnapshot, ClosedStatement, Moneda }
  * We drive the UI and read those responses.
  */
 const LOGIN_URL = 'https://onlinebanking.bancogalicia.com.ar/login';
-const HOME_URL = 'https://onlinebanking.bancogalicia.com.ar/navigation/menulink/1';
 const ACCOUNTS_URL = 'https://onlinebanking.bancogalicia.com.ar/navigation/menulink/2';
+const PAGOS_MENU_URL = 'https://onlinebanking.bancogalicia.com.ar/navigation/menulink/409';
 const PAGOS_HOST = 'pagosyrecargas.bancogalicia.com.ar';
 const CARDS_MENU_URL = 'https://onlinebanking.bancogalicia.com.ar/navigation/menulink/390';
 const MOVEMENTS_URL = 'https://tarjetas.bancogalicia.com.ar/tarjetas/ini/movimientos';
@@ -115,6 +116,17 @@ export function closedStatement(card: OverviewCard, today: string): ClosedStatem
   const amount = (cur: string) => num(totals.find(t => t.currency === cur)?.amount);
   const minimo = card.settlement_minimum_payment?.find(m => m.currency === 'ARS')?.total_amount;
   return { cierre, vencimiento, ARS: amount('ARS'), USD: amount('USD'), minimo: minimo === undefined ? undefined : num(minimo) };
+}
+
+/** ["Saldo en Pesos 12.345,67", "Saldo en Dolares 1,00"] → { ARS, USD } (summed per currency). */
+export function parseGaliciaBalances(texts: string[]): AccountBalance {
+  const out: AccountBalance = { ARS: 0, USD: 0 };
+  for (const t of texts) {
+    const amount = parseArAmount(t.replace(/^[^\d-]*/, ''));
+    if (/d[oó]lar/i.test(t)) out.USD += amount;
+    else if (/peso/i.test(t)) out.ARS += amount;
+  }
+  return { ARS: Math.round(out.ARS * 100) / 100, USD: Math.round(out.USD * 100) / 100 };
 }
 
 export function toSnapshot(card: OverviewCard, mov: MovementsResponse, today: string): CardSnapshot {
@@ -277,12 +289,9 @@ export const galicia: BankAdapter = {
         /* ignore */
       }
     });
-    // pagosyrecargas.* only accepts sessions handed over from the banking home's menu
-    // (a direct goto lands on "Sesión expirada"), so go home and follow the Pagos link.
-    await page.goto(HOME_URL);
-    const link = page.locator(`a[href*="pagosyrecargas"], a:text-matches("^\\s*Pagos", "i")`).first();
-    await step('pagos: link en el menú', () => link.waitFor({ state: 'attached', timeout: 20_000 }));
-    await link.evaluate(el => (el as HTMLElement).click());
+    // pagosyrecargas.* only accepts sessions handed over by the banking menu
+    // ("Pagos de servicios", menulink 409); a direct goto lands on "Sesión expirada".
+    await page.goto(PAGOS_MENU_URL).catch(() => {});
     const pagosPage = await step('pagos: abriendo pagos y recargas', () => waitForPage(ctx, PAGOS_HOST));
     page = pagosPage;
     await page.waitForLoadState('networkidle', { timeout: 20_000 }).catch(() => {});
@@ -300,9 +309,20 @@ export const galicia: BankAdapter = {
     return [];
   },
 
+  /** "Mis cuentas" renders each account with an accessible "Saldo en Pesos/Dolares N" text. */
+  async balances(page) {
+    await page.goto(ACCOUNTS_URL);
+    const live = await step('cuentas: página de cuentas', () => waitForPage(page.context(), 'cuentas.bancogalicia.com.ar'));
+    const labels = live.locator('[id="SaldoAccesibilidad"]');
+    await step('cuentas: saldos', () => labels.first().waitFor({ state: 'attached', timeout: TIMEOUT }));
+    return parseGaliciaBalances(await labels.allTextContents());
+  },
+
   async captureAccounts(page) {
-    await captureMasked(page, 'galicia-cuentas-shape', async () => {
-      await page.goto(ACCOUNTS_URL);
+    const live = page.context().pages().filter(p => !p.isClosed()).at(-1) ?? page;
+    await captureMasked(live, 'galicia-cuentas-shape', async () => {
+      // open the pesos account to load its movements
+      await live.locator('[role="button"][aria-label*="Pesos"]').first().click({ timeout: 20_000 });
     });
   },
 

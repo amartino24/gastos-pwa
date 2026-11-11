@@ -59,6 +59,12 @@ export interface ServicePayment {
   automatico: boolean;
 }
 
+/** Money in the bank's accounts right now. */
+export interface AccountBalance {
+  ARS: number;
+  USD: number;
+}
+
 export interface ScrapeOptions {
   /** Last 4 digits to keep; empty = every credit card. */
   tarjetas: string[];
@@ -81,6 +87,8 @@ export interface BankAdapter {
   scrape(page: Page, opts: ScrapeOptions): Promise<CardSnapshot[]>;
   /** Pending bills, when the bank lists them. Runs after `scrape`, same session. */
   services?(page: Page): Promise<ServicePayment[]>;
+  /** Account balances (all accounts of the bank, per currency). */
+  balances?(page: Page): Promise<AccountBalance>;
   /** TEMPORARY: masked capture of the accounts section, to learn its API. */
   captureAccounts?(page: Page): Promise<void>;
   /** Best effort; some banks block new logins while a session stays open. */

@@ -4,7 +4,7 @@ import { CardsService } from './cards';
 import { MonthsService } from './months';
 
 /**
- * Keeps months in sync with the scraper: whenever card cycles or pending bills arrive
+ * Keeps months in sync with the scraper: whenever card cycles, pending bills or balances arrive
  * (and the user's data is loaded), each lands in its payment month — created if needed.
  */
 @Injectable({ providedIn: 'root' })
@@ -16,9 +16,10 @@ export class CardSyncService {
     effect(() => {
       const cycles = this.cards.cycles();
       const services = this.cards.services();
+      const saldos = this.cards.saldos();
       const ready = !this.months.loading() && this.months.authState() === 'ready';
-      if (!ready || (cycles.length === 0 && services.length === 0)) return;
-      untracked(() => this.months.applyScraped(cycles, services, arDay(new Date().toISOString())));
+      if (!ready) return;
+      untracked(() => this.months.applyScraped(cycles, services, saldos, arDay(new Date().toISOString())));
     });
   }
 }

@@ -1,5 +1,5 @@
 import {
-  CardCycle, MONTH_NAMES, RefreshStatus, ScrapeRequest, ScrapedBank, ScrapedCard, ScrapedMovement, ScraperBank,
+  CardCycle, MONTH_NAMES, MedioBalance, RefreshStatus, SCRAPER_BANK_LABELS, ScrapeRequest, ScrapedBank, ScrapedCard, ScrapedMovement, ScraperBank,
 } from '../../core/models';
 
 const SHORT_MONTHS = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
@@ -140,4 +140,16 @@ export function refreshOutcome(req: ScrapeRequest, bank: ScrapedBank | undefined
   if (!bank || !req.startedAt || bank.updatedAt < req.startedAt) return { kind: 'no-data' };
   if (!bank.ok) return { kind: 'error', error: bank.error ?? 'error desconocido' };
   return { kind: 'ok', nuevos: (bank.tarjetas ?? []).reduce((n, t) => n + t.nuevos, 0) };
+}
+
+/** "Saldo en cuentas hace 2 h: Santander $1.000 · Galicia $500 (+ US$ 51)" */
+export function sobranteHint(banco: MedioBalance, now: Date): string | null {
+  const auto = banco.sobranteAuto;
+  if (!auto) return null;
+  const banks = Object.entries(auto.bancos) as [ScraperBank, { ARS: number; USD: number }][];
+  const ars = banks.map(([b, v]) => `${SCRAPER_BANK_LABELS[b]} $${Math.round(v.ARS).toLocaleString('es-AR')}`).join(' · ');
+  const usd = banks.reduce((n, [, v]) => n + v.USD, 0);
+  const usdText = usd ? ` (+ US$ ${usd.toLocaleString('es-AR', { maximumFractionDigits: 2 })})` : '';
+  const edited = banco.sobrante !== auto.applied ? ' · editado a mano' : '';
+  return `Saldo en cuentas ${updatedAgo(auto.updatedAt, now)}: ${ars}${usdText}${edited}`;
 }

@@ -64,6 +64,16 @@ export interface BankAccountAuto {
 export interface MedioBalance {
   sobrante: number;
   paraUsar: number;
+  /** Banco only: sobrante filled from the bank accounts' balances (see core/domain/balance-sync.ts). */
+  sobranteAuto?: SobranteAuto;
+}
+
+export interface SobranteAuto {
+  updatedAt: string;
+  /** Balance per bank at that time. */
+  bancos: Partial<Record<ScraperBank, { ARS: number; USD: number }>>;
+  /** Last value written automatically; a hand-edited sobrante stops being overwritten. */
+  applied: number;
 }
 
 export interface MonthData {
@@ -192,8 +202,15 @@ export interface ScrapedServices {
   items: ServicePayment[];
 }
 
+export interface ScrapedBalance {
+  updatedAt: string;
+  ARS: number;
+  USD: number;
+}
+
 export type CardsDoc = {
   updatedAt?: string;
+  saldos?: Partial<Record<ScraperBank, ScrapedBalance>>;
   ciclos?: Record<string, CardCycle>;
   servicios?: Partial<Record<ScraperBank, ScrapedServices>>;
 } & Partial<Record<ScraperBank, ScrapedBank>>;

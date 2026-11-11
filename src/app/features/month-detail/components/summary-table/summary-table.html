@@ -22,6 +22,9 @@
                 [value]="fmt(row.sobrante)" (change)="setBalance(row.medio, 'sobrante', $any($event.target))" />
             </span>
           </div>
+          @if (row.medio === 'banco' && sobranteHint(); as hint) {
+            <p class="auto-hint">{{ hint }}</p>
+          }
           <div class="row">
             <span class="row-label">Diferencia</span>
             <span class="row-val" [class.neg]="row.diferencia < 0" [class.pos]="row.diferencia >= 0">

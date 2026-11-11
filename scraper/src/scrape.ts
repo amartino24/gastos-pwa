@@ -11,9 +11,9 @@ import { spawn } from 'node:child_process';
 import { join } from 'node:path';
 import { chromium, type BrowserContext, type Page } from 'playwright';
 import { ADAPTERS, adapterFor } from './banks/index.js';
-import type { BankId, CardSnapshot, Credentials, ServicePayment } from './banks/types.js';
+import type { AccountBalance, BankId, CardSnapshot, Credentials, ServicePayment } from './banks/types.js';
 import { PATHS, ensureHome, loadConfig, loadState, saveState, type ScraperState } from './config.js';
-import { writeBank, writeServices, type CardResult } from './firestore.js';
+import { writeBalance, writeBank, writeServices, type CardResult } from './firestore.js';
 import { forecastNextStatement } from './forecast.js';
 import { readSecret } from './keychain.js';
 import { SERIALIZE_DOM_JS, renderDom, stripQuery, type DomNode } from './sanitize.js';
@@ -101,6 +101,7 @@ async function minimizeWindow(ctx: BrowserContext, page: Page): Promise<void> {
 
 interface BankRun {
   cards: CardSnapshot[];
+  balance?: AccountBalance | null;
   /** undefined: the bank doesn't list bills; null: listing them failed (cards still OK). */
   services?: ServicePayment[] | null;
 }
@@ -138,12 +139,18 @@ async function runBank(bank: BankId, tarjetas: string[], mode: BrowserMode): Pro
           return null;
         })
       : undefined;
+    const balance = adapter.balances
+      ? await adapter.balances(livePage(ctx, page)).catch(err => {
+          log(`${bank}: no se pudieron leer los saldos — ${err instanceof Error ? err.message.split('\n')[0] : String(err)}`);
+          return null;
+        })
+      : undefined;
     if (adapter.captureAccounts) {
       await adapter.captureAccounts(livePage(ctx, page)).catch(err =>
         log(`${bank}: captura de cuentas falló — ${err instanceof Error ? err.message.split('\n')[0] : String(err)}`),
       );
     }
-    return { cards, services };
+    return { cards, services, balance };
   } catch (err) {
     await dumpFailure(livePage(ctx, page), bank);
     throw err;
@@ -208,12 +215,13 @@ async function main(): Promise<void> {
       }
       const updatedAt = new Date().toISOString();
       try {
-        const { cards: snapshots, services } = await runWithFallback(bank, config.tarjetas?.[bank] ?? [], state);
+        const { cards: snapshots, services, balance } = await runWithFallback(bank, config.tarjetas?.[bank] ?? [], state);
         const nuevos = markSeen(seen, bank, snapshots, today);
         const tarjetas: CardResult[] = snapshots.map((c, i) => ({ ...c, forecast: forecastNextStatement(c), nuevos: nuevos[i]! }));
         if (!flag('dry-run')) {
           await writeBank(config.uid, bank, { updatedAt, ok: true, tarjetas });
           if (services) await writeServices(config.uid, bank, { updatedAt, items: services });
+          if (balance) await writeBalance(config.uid, bank, { updatedAt, ...balance });
           pruneSeen(seen, today);
           await saveSeen(seen);
           state.lastSuccess[bank] = updatedAt;
@@ -221,7 +229,7 @@ async function main(): Promise<void> {
         }
         const movs = tarjetas.reduce((n, t) => n + t.pendientes.length, 0);
         const nuevosTotal = nuevos.reduce((a, b) => a + b, 0);
-        const pagos = services ? `, ${services.length} pago(s)` : '';
+        const pagos = (services ? `, ${services.length} pago(s)` : '') + (balance ? ', saldos OK' : '');
         log(`${bank}: OK — ${tarjetas.length} tarjeta(s), ${movs} consumo(s), ${nuevosTotal} nuevo(s)${pagos}${flag('dry-run') ? ' [dry-run]' : ''}`);
         if (flag('show')) {
           for (const t of tarjetas) {

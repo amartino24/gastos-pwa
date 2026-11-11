@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { ScrapedCard } from '../../core/models';
 import {
   formatMovementAmount, installmentEnd, isNewMovement, paymentMonth, refreshOutcome, refreshStatus, showNewBadge, updatedAgo,
-  viewFromCycle, viewFromScraped, waitingLabel, watcherOnline,
+  sobranteHint, viewFromCycle, viewFromScraped, waitingLabel, watcherOnline,
 } from './cards';
 
 const card = (nuevos: number, n = 3): ScrapedCard => ({
@@ -85,5 +85,16 @@ describe('card utils', () => {
     expect(refreshOutcome(req, { updatedAt: '2026-11-08T12:01:00Z', ok: false, error: 'login' })).toEqual({ kind: 'error', error: 'login' });
     expect(refreshOutcome(req, { updatedAt: '2026-11-08T11:00:00Z', ok: true })).toEqual({ kind: 'no-data' });
     expect(refreshOutcome(req, undefined)).toEqual({ kind: 'no-data' });
+  });
+
+  it('sobranteHint explains where the Banco sobrante came from', () => {
+    const now = new Date('2026-11-10T12:00:00Z');
+    expect(sobranteHint({ sobrante: 0, paraUsar: 0 }, now)).toBeNull();
+    const banco = {
+      sobrante: 1500, paraUsar: 0,
+      sobranteAuto: { updatedAt: '2026-11-10T10:00:00Z', applied: 1500, bancos: { santander: { ARS: 1000, USD: 50 }, galicia: { ARS: 500, USD: 1 } } },
+    };
+    expect(sobranteHint(banco, now)).toBe('Saldo en cuentas hace 2 h: Santander $1.000 · Galicia $500 (+ US$ 51)');
+    expect(sobranteHint({ ...banco, sobrante: 9 }, now)).toContain('editado a mano');
   });
 });

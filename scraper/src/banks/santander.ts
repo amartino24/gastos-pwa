@@ -1,7 +1,7 @@
 import type { Locator, Page, Response } from 'playwright';
 import { captureMasked } from '../capture.js';
 import { parseArAmount, parseDate } from '../parse.js';
-import type { BankAdapter, CardMovement, CardSnapshot, ServicePayment } from './types.js';
+import type { AccountBalance, BankAdapter, CardMovement, CardSnapshot, ServicePayment } from './types.js';
 
 /**
  * Santander "Online Banking Personas". The SPA loads card data from its own
@@ -44,6 +44,25 @@ async function step<T>(name: string, fn: () => Promise<T>): Promise<T> {
   } catch (err) {
     throw new Error(`${name} — ${err instanceof Error ? err.message.split('\n')[0] : String(err)}`);
   }
+}
+
+/** The home loads obtenerSaldosCuentas right after login: keep its totals per browser context. */
+const balancesSeen = new WeakMap<object, AccountBalance>();
+
+function watchBalances(page: Page): void {
+  page.context().on('response', async r => {
+    if (!pathOf(r).endsWith('/home/obtenerSaldosCuentas')) return;
+    try {
+      const body = (await r.json()) as { respuesta?: { saldoPesosValue?: number | string; saldoDolaresValue?: number | string } };
+      if (!body.respuesta) return;
+      balancesSeen.set(page.context(), {
+        ARS: parseArAmount(body.respuesta.saldoPesosValue),
+        USD: parseArAmount(body.respuesta.saldoDolaresValue),
+      });
+    } catch {
+      /* ignore */
+    }
+  });
 }
 
 const logoutButton = (page: Page) =>
@@ -118,6 +137,7 @@ export const santander: BankAdapter = {
   ],
 
   async login(page, creds) {
+    watchBalances(page);
     // Visible labels aren't bound to the inputs, so getByLabel doesn't work here.
     const password = page.locator('input#clave');
     const user = page.locator('input#datosusuario');
@@ -170,11 +190,20 @@ export const santander: BankAdapter = {
     return (body.respuesta?.pagosPendientesConVencimiento ?? []).filter(p => !p.isTarjetas).flatMap(toServicePayment);
   },
 
+  async balances(page) {
+    const seen = balancesSeen.get(page.context());
+    if (!seen) throw new Error('santander: no llegaron los saldos del home');
+    return seen;
+  },
+
   async captureAccounts(page) {
     await captureMasked(page, 'santander-cuentas-shape', async () => {
       await page.locator('[aria-label="Volver al inicio"]').first().click({ timeout: 10_000 });
       await page.waitForTimeout(2_000);
+      const movements = page.waitForResponse(r => /movim|movement/i.test(r.url()), { timeout: 30_000 });
+      movements.catch(() => {});
       await page.getByText(/^\s*Ver movimientos\s*$/i).first().click({ timeout: 20_000 });
+      await movements.catch(() => {}); // the list loads slowly; wait for it before snapshotting
     });
   },
 
