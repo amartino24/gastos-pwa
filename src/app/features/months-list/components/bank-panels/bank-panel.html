@@ -1,0 +1,87 @@
+@let d = data();
+<article class="panel" [attr.aria-labelledby]="'bank-' + d.bank">
+  <header class="head">
+    <h3 [id]="'bank-' + d.bank" class="name">{{ bankLabel[d.bank] }}</h3>
+    <app-refresh-button [bank]="d.bank" [updatedAt]="d.updatedAt" [now]="now()" />
+  </header>
+
+  @if (d.error) {
+    <p class="error" role="status">
+      <mat-icon aria-hidden="true">error_outline</mat-icon>
+      <span>No se pudo actualizar: {{ d.error }}</span>
+    </p>
+  }
+
+  @if (d.balance; as b) {
+    <div class="line">
+      <span class="label">En cuenta</span>
+      <span class="value">
+        ${{ fmtArs(b.ARS) }}
+        @if (b.USD) { <small>US$ {{ b.USD | number:'1.2-2':'es-AR' }}</small> }
+      </span>
+    </div>
+  }
+
+  @for (c of d.cards; track c.view.tarjeta) {
+    @let v = c.view;
+    @let pm = paymentMonth(v.vencimiento);
+    <div class="line card-line">
+      <span class="label">
+        Tarjeta <span class="mono">{{ v.tarjeta }}</span>
+        @if (showNewBadge(v)) { <span class="new">{{ v.nuevos }} {{ v.nuevos === 1 ? 'nuevo' : 'nuevos' }}</span> }
+      </span>
+      <span class="value">${{ fmtArs(c.total) }}</span>
+    </div>
+    <div class="meta">
+      @if (v.usd) {
+        <span>${{ fmtArs(v.ars) }} + US$ {{ v.usd | number:'1.2-2':'es-AR' }}</span>
+      }
+      @if (v.cierre) { <span>Cierra {{ shortDate(v.cierre) }}</span> }
+      @if (v.vencimiento) {
+        <span>Vence {{ shortDate(v.vencimiento) }}
+          <span class="days-badge" [class]="daysClass(v.vencimiento)">{{ daysLabel(v.vencimiento) }}</span>
+        </span>
+      }
+      @if (pm) {
+        <a class="month-link" [routerLink]="['/month', pm.id]">{{ pm.name }} <mat-icon aria-hidden="true">arrow_forward</mat-icon></a>
+      }
+    </div>
+
+    @if (v.movimientos.length) {
+      <details class="fold">
+        <summary><mat-icon aria-hidden="true">expand_more</mat-icon> Consumos de la tarjeta ({{ v.movimientos.length }})</summary>
+        <ul class="list">
+          @for (m of sortedConsumos(v.movimientos); track $index) {
+            <li [class.is-new]="isNew(m, v)">
+              <span class="date">{{ shortDate(m.fecha) }}</span>
+              <span class="desc">
+                {{ m.descripcion }}
+                @if (m.cuota) { <span class="tag">{{ m.cuota.actual }}/{{ m.cuota.total }} · hasta {{ installmentEnd(pm?.id, m.cuota) }}</span> }
+                @if (m.pendiente) { <span class="tag warn">pendiente</span> }
+              </span>
+              <span class="amount">{{ money(m) }}</span>
+            </li>
+          }
+        </ul>
+      </details>
+    }
+  }
+
+  @if (movements().length) {
+    <details class="fold">
+      <summary><mat-icon aria-hidden="true">expand_more</mat-icon> Movimientos de la cuenta ({{ movements().length }})</summary>
+      <ul class="list">
+        @for (m of movements(); track $index) {
+          <li>
+            <span class="date">{{ shortDate(m.fecha) }}</span>
+            <span class="desc">
+              {{ m.descripcion }}
+              @if (m.pendiente) { <span class="tag warn">pendiente</span> }
+            </span>
+            <span class="amount" [class.credit]="m.monto > 0">{{ signed(m) }}</span>
+          </li>
+        }
+      </ul>
+    </details>
+  }
+</article>
