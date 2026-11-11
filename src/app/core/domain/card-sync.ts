@@ -22,8 +22,13 @@ export function pesify(ars: number, usd: number, rate: number): number {
 function applyToAccount(account: BankAccount, cycle: CardCycle, rate: number): BankAccount {
   const { ARS, USD } = cycleAmounts(cycle);
   const total = pesify(ARS, USD, rate);
-  // Respect the user: an uploaded statement or a hand-edited total wins over ours.
-  const ours = account.total === 0 || account.total === account.auto?.appliedTotal;
+  // First fill, or the bank's real total arriving for the first time, always applies
+  // (it replaces an estimate typed by hand). After that a hand-edited total wins,
+  // and an uploaded PDF statement always does.
+  // No total of ours yet (new account, or one whose hand-typed total was kept before).
+  const firstFill = !account.auto || account.auto.appliedTotal === undefined;
+  const finalArrives = !!cycle.final && !account.auto?.final;
+  const ours = firstFill || finalArrives || account.total === 0 || account.total === account.auto?.appliedTotal;
   const canSetTotal = !account.statement && ours;
   const auto: BankAccountAuto = {
     bank: cycle.bank,

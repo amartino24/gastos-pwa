@@ -86,6 +86,38 @@ describe('applyCardCycles', () => {
     expect(g.auto?.movimientos).toHaveLength(1);
   });
 
+  it('the real closed total replaces a total typed by hand before it', () => {
+    const typed = { ...state, months: [{ ...nov, bankAccounts: [{ id: 'b1', name: 'Galicia', total: 1520000 }] }] };
+    const closedNov: CardCycle = {
+      bank: 'galicia', tarjeta: 'Visa ···4871', mesPago: '2026-11', cierre: '2026-10-29', vencimiento: '2026-11-11',
+      updatedAt: 't', final: { ARS: 1518923.09, USD: 0, minimo: 151000 },
+    };
+    const out = applyCardCycles(typed, [closedNov], id)!;
+    const g = out.months[0].bankAccounts.find(a => a.name === 'Galicia')!;
+    expect(g.total).toBe(1518923);
+    // once the real total is in, a later hand edit is respected
+    const edited = { ...out, months: [{ ...out.months[0], bankAccounts: [{ ...g, total: 1 }] }] };
+    const again = applyCardCycles(edited, [{ ...closedNov, updatedAt: 't2' }], id)!;
+    expect(again.months[0].bankAccounts[0].total).toBe(1);
+  });
+
+  it('fixes an account already marked closed whose typed total was kept (no total of ours yet)', () => {
+    const stuck = { ...state, months: [{ ...nov, bankAccounts: [{
+      id: 'b1', name: 'Galicia', total: 1520000,
+      auto: { bank: 'galicia' as const, tarjeta: 'Visa ···4871', updatedAt: 't', ars: 1518923.09, usd: 0, final: true, movimientos: [] },
+    }] }] };
+    const closedNov: CardCycle = {
+      bank: 'galicia', tarjeta: 'Visa ···4871', mesPago: '2026-11', vencimiento: '2026-11-11', updatedAt: 't', final: { ARS: 1518923.09, USD: 0 },
+    };
+    expect(applyCardCycles(stuck, [closedNov], id)!.months[0].bankAccounts[0].total).toBe(1518923);
+  });
+
+  it('an uploaded statement always wins', () => {
+    const withPdf = { ...state, months: [{ ...nov, bankAccounts: [{ id: 'b1', name: 'Galicia', total: 777, statement: { filename: 'r.pdf', extractedAmount: 777, uploadedAt: 'x' } }] }] };
+    const out = applyCardCycles(withPdf, [{ ...galiciaDec, mesPago: '2026-11', final: { ARS: 5, USD: 0 } }], id)!;
+    expect(out.months[0].bankAccounts[0].total).toBe(777);
+  });
+
   it('does not back-fill months older than the newest one', () => {
     const old: CardCycle = { ...galiciaDec, mesPago: '2026-09', vencimiento: '2026-09-04', final: { ARS: 1, USD: 0 } };
     expect(applyCardCycles(state, [old], id)).toBeNull();
