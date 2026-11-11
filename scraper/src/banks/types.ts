@@ -101,8 +101,6 @@ export interface BankAdapter {
   balances?(page: Page): Promise<AccountBalance>;
   /** Recent movements of the main pesos account. Runs right after `balances`. */
   movements?(page: Page): Promise<AccountMovement[]>;
-  /** TEMPORARY: masked capture of the accounts section, to learn its API. */
-  captureAccounts?(page: Page): Promise<void>;
   /** Best effort; some banks block new logins while a session stays open. */
   logout?(page: Page): Promise<void>;
 }

@@ -77,6 +77,12 @@ Los datos en Firestore no se tocan. Probar todo: `npm run test:wake` (y después
 
 Después de las tarjetas, lee las facturas pendientes de "Pagos y servicios" (`obtenerPagosPendientes`), sin los resúmenes de tarjeta, y las guarda en `servicios.santander`. La app pone cada una en el mes de su vencimiento, en Banco: actualiza el gasto vinculado (o uno con el nombre de la empresa, o lo crea), respeta un monto editado a mano y marca pagado un débito automático cuando pasa el vencimiento (una sola vez). El vínculo pasa al mes siguiente aunque renombres el gasto.
 
+## Cuentas: saldos, movimientos y conciliación
+
+- Santander: saldos de `obtenerSaldosCuentas` (home); movimientos de la cuenta en pesos por GraphQL (`movements`) desde "Ver movimientos". Pagos y servicios desde el acceso rápido del home.
+- Galicia: saldos de "Mis cuentas"; movimientos de `GetMovimientosCuenta` (cuenta en pesos); pagos de `GetPublishedDebtsDataOrdered` (menú "Pagos de servicios").
+- Se guardan en `saldos.<banco>` y `movimientosCuenta.<banco>`. La app pone los pesos en el sobrante de Banco del mes siguiente y marca pagados los resúmenes y gastos que coinciden con un débito.
+
 ## Cálculo
 
 Estimado = suma de los consumos del ciclo abierto (con cuotas del período, devoluciones y autorizaciones pendientes), ARS y USD por separado; la app pesifica los USD al dólar del mes. Cuando cierra el resumen se usa el total real del banco (Galicia).

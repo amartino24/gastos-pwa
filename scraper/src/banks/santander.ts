@@ -1,7 +1,6 @@
 import type { Locator, Page, Response } from 'playwright';
-import { captureMasked } from '../capture.js';
 import { parseArAmount, parseDate } from '../parse.js';
-import type { AccountBalance, BankAdapter, CardMovement, CardSnapshot, ServicePayment } from './types.js';
+import type { AccountBalance, AccountMovement, BankAdapter, CardMovement, CardSnapshot, ServicePayment } from './types.js';
 
 /**
  * Santander "Online Banking Personas". The SPA loads card data from its own
@@ -63,6 +62,64 @@ function watchBalances(page: Page): void {
       /* ignore */
     }
   });
+}
+
+interface GqlMovement {
+  id?: string;
+  isPending?: boolean;
+  content?: {
+    date?: { value?: string }; // dd/mm/yyyy
+    description?: { title?: string; detail?: string };
+    csueldo?: { currency?: string | null; value?: number | string | null };
+    ccorriente?: { currency?: string | null; value?: number | string | null };
+  };
+}
+
+/** First GraphQL response carrying a non-empty `movements` list (else the first one, after 20 s). */
+function firstMovements(page: Page): Promise<GqlMovement[]> {
+  const ctx = page.context();
+  return new Promise((resolve, reject) => {
+    let empty: GqlMovement[] | null = null;
+    const done = (v: GqlMovement[] | null, err?: Error) => {
+      clearTimeout(fallback);
+      clearTimeout(timer);
+      ctx.off('response', onResponse);
+      if (v) resolve(v);
+      else reject(err);
+    };
+    const fallback = setTimeout(() => { if (empty) done(empty); }, 20_000);
+    const timer = setTimeout(() => done(empty, new Error('no llegaron los movimientos')), TIMEOUT);
+    const onResponse = async (r: Response) => {
+      if (!pathOf(r).includes('/graphql')) return;
+      try {
+        const body = (await r.json()) as { data?: { movements?: GqlMovement[] } };
+        const list = body.data?.movements;
+        if (!Array.isArray(list)) return;
+        if (list.length) done(list);
+        else empty ??= list;
+      } catch {
+        /* ignore */
+      }
+    };
+    ctx.on('response', onResponse);
+  });
+}
+
+/** Signed amount from the "cuenta sueldo"/"cuenta corriente" column; title + detail (no long numbers). */
+export function toSantanderMovement(m: GqlMovement): AccountMovement[] {
+  const fecha = m.content?.date?.value ? parseDate(m.content.date.value) : null;
+  const col = m.content?.csueldo?.value != null ? m.content.csueldo : m.content?.ccorriente;
+  if (!fecha || col?.value == null) return [];
+  const detail = clean(m.content?.description?.detail).replace(/\d{6,}/g, '').replace(/[:\s-]+$/, '').trim();
+  const title = clean(m.content?.description?.title);
+  return [{
+    id: m.id || undefined,
+    fecha,
+    descripcion: [title, detail].filter(Boolean).join(' · '),
+    monto: Math.round(parseArAmount(col.value) * 100) / 100,
+    moneda: /usd/i.test(col.currency ?? '') ? 'USD' : 'ARS',
+    pendiente: m.isPending || undefined,
+  }];
 }
 
 const logoutButton = (page: Page) =>
@@ -196,20 +253,25 @@ export const santander: BankAdapter = {
     return seen;
   },
 
-  async captureAccounts(page) {
-    await captureMasked(page, 'santander-cuentas-shape', async () => {
-      await page.locator('[aria-label="Volver al inicio"]').first().click({ timeout: 10_000 });
-      await page.waitForTimeout(2_000);
-      const movements = page.waitForResponse(r => /movim|movement/i.test(r.url()), { timeout: 30_000 });
-      movements.catch(() => {});
-      await page.getByText(/^\s*Ver movimientos\s*$/i).first().click({ timeout: 20_000 });
-      await movements.catch(() => {}); // the list loads slowly; wait for it before snapshotting
-    });
+  /** Pesos account movements: the accounts page asks GraphQL for `movements` (pesos tab first). */
+  async movements(page) {
+    const got = firstMovements(page);
+    await step('cuentas: volver al inicio', () => page.locator('[aria-label="Volver al inicio"]').first().click({ timeout: 10_000 }));
+    await page.waitForTimeout(1_500 + Math.random() * 1_000);
+    await step('cuentas: "Ver movimientos"', () => page.getByText(/^\s*Ver movimientos\s*$/i).first().click({ timeout: 20_000 }));
+    const list = await step('cuentas: movimientos', () => got);
+    return list.flatMap(toSantanderMovement);
   },
 
   async logout(page) {
-    const salir = logoutButton(page);
-    if (!(await salir.isVisible().catch(() => false))) return;
+    let salir = logoutButton(page);
+    if (!(await salir.isVisible().catch(() => false))) {
+      // The newer accounts app has no such button: go back to the classic home first,
+      // otherwise the session stays open and the next login gets kicked out.
+      await page.goto(`${BASE}/home`).catch(() => {});
+      salir = logoutButton(page);
+      if (!(await salir.waitFor({ timeout: 15_000 }).then(() => true, () => false))) return;
+    }
     await salir.click({ timeout: 5_000 });
     // A confirmation dialog may show up; accept it if it does.
     // "¿Estás seguro de que querés salir?" → "Si". The modal's buttons aren't always
