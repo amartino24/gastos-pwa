@@ -1,0 +1,47 @@
+@if (rows().length) {
+  <section class="accounts" aria-labelledby="accounts-title">
+    <header class="head">
+      <h2 id="accounts-title" class="title">
+        <mat-icon aria-hidden="true">account_balance</mat-icon>
+        Cuentas
+      </h2>
+      <span class="total">${{ fmtArs(totalArs()) }}</span>
+    </header>
+
+    @for (r of rows(); track r.bank) {
+      <article class="account">
+        <div class="account-head">
+          <span class="bank">{{ bankLabel[r.bank] }}</span>
+          <span class="updated">{{ ago(r.updatedAt) }}</span>
+        </div>
+        <div class="balances">
+          <span class="ars">${{ fmtArs(r.ars) }}</span>
+          @if (r.usd) {
+            <span class="usd">US$ {{ r.usd | number:'1.2-2':'es-AR' }}</span>
+          }
+        </div>
+
+        @if (r.movements.length) {
+          <details class="movements">
+            <summary>
+              <mat-icon aria-hidden="true">expand_more</mat-icon>
+              Ver {{ r.movements.length }} movimientos
+            </summary>
+            <ul class="list">
+              @for (m of r.movements; track $index) {
+                <li class="mov">
+                  <span class="date">{{ shortDate(m.fecha) }}</span>
+                  <span class="desc">
+                    {{ m.descripcion }}
+                    @if (m.pendiente) { <span class="tag">pendiente</span> }
+                  </span>
+                  <span class="amount" [class.credit]="m.monto > 0">{{ signed(m) }}</span>
+                </li>
+              }
+            </ul>
+          </details>
+        }
+      </article>
+    }
+  </section>
+}

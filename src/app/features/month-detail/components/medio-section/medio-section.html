@@ -20,6 +20,12 @@
         <div class="name-col">
           <input class="name" [value]="item.name" aria-label="Nombre del gasto"
             (blur)="rename(item, $any($event.target).value)" />
+          @if (item.paidBy; as p) {
+            <span class="auto-hint">
+              <mat-icon aria-hidden="true">task_alt</mat-icon>
+              Debitado {{ shortDate(p.fecha) }} · {{ p.descripcion }}
+            </span>
+          }
           @if (item.auto; as auto) {
             <span class="auto-hint">
               <mat-icon aria-hidden="true">sync</mat-icon>

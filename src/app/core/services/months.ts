@@ -5,6 +5,7 @@ import { migrateState } from '../domain/migration';
 import { applyCardCycles } from '../domain/card-sync';
 import { applyServices } from '../domain/service-sync';
 import { applyBalances } from '../domain/balance-sync';
+import { Debit, applyReconciliation } from '../domain/reconcile';
 import {
   buildNewMonth, calcPaidSummary, calcSummary, lastExchangeRate, monthId, sortMonthsDesc,
   templateFromMonth,
@@ -134,7 +135,8 @@ export class MonthsService {
    * into expenses, each in its payment month (created if missing). Saves only on change.
    */
   applyScraped(
-    cycles: CardCycle[], services: ScrapedServices[], saldos: Partial<Record<ScraperBank, ScrapedBalance>>, today: string,
+    cycles: CardCycle[], services: ScrapedServices[], saldos: Partial<Record<ScraperBank, ScrapedBalance>>,
+    debits: Debit[], today: string,
   ): void {
     let state = this.state();
     let changed = false;
@@ -146,6 +148,9 @@ export class MonthsService {
     }
     const withBalances = applyBalances(state, saldos, today);
     if (withBalances) { state = withBalances; changed = true; }
+    // Last: totals and bills are in place before matching debits against them.
+    const reconciled = applyReconciliation(state, debits);
+    if (reconciled) { state = reconciled; changed = true; }
     if (!changed) return;
     this.state.set(state);
     this.save();

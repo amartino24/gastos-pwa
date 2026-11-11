@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { cert, getApps, initializeApp } from 'firebase-admin/app';
 import { getFirestore, type Firestore } from 'firebase-admin/firestore';
-import type { BankId, CardSnapshot, ServicePayment } from './banks/types.js';
+import type { AccountMovement, BankId, CardSnapshot, ServicePayment } from './banks/types.js';
 import { PATHS } from './config.js';
 import type { Forecast } from './forecast.js';
 
@@ -47,6 +47,14 @@ export async function writeBank(uid: string, bank: BankId, entry: BankCardsDoc):
   }
   // merge: a closed statement only adds `final` to its month's record, keeping the movements seen while open.
   await ref.set({ updatedAt: entry.updatedAt, [bank]: entry, ...(Object.keys(ciclos).length ? { ciclos } : {}) }, { merge: true });
+}
+
+/** Recent movements of the bank's pesos account, in `movimientosCuenta.<bank>` (latest read). */
+export async function writeAccountMovements(
+  uid: string, bank: BankId, entry: { updatedAt: string; items: AccountMovement[] },
+): Promise<void> {
+  const ref = (await firestore()).doc(`users/${uid}/data/cards`);
+  await ref.set({ movimientosCuenta: { [bank]: entry } }, { merge: true });
 }
 
 /** Account balances per bank, in `saldos.<bank>` (latest read). */

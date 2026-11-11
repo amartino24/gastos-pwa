@@ -12,6 +12,15 @@ export interface ExpenseItem {
   serviceKey?: string;
   /** Last bill applied by the scraper (see core/domain/service-sync.ts). */
   auto?: ExpenseAuto;
+  /** Account debit that paid it (see core/domain/reconcile.ts). Once set, never re-marked. */
+  paidBy?: PaidBy;
+}
+
+export interface PaidBy {
+  bank: ScraperBank;
+  fecha: string; // YYYY-MM-DD
+  descripcion: string;
+  monto: number;
 }
 
 export interface ExpenseAuto {
@@ -44,6 +53,8 @@ export interface BankAccount {
   statement?: BankAccountStatement;
   /** Filled automatically from the card scraper (see core/domain/card-sync.ts). */
   auto?: BankAccountAuto;
+  /** Account debit that paid the statement (see core/domain/reconcile.ts). */
+  paidBy?: PaidBy;
 }
 
 export interface BankAccountAuto {
@@ -202,6 +213,21 @@ export interface ScrapedServices {
   items: ServicePayment[];
 }
 
+/** A line of a bank account's movements (debits negative). */
+export interface AccountMovement {
+  id?: string;
+  fecha: string; // YYYY-MM-DD
+  descripcion: string;
+  monto: number;
+  moneda: 'ARS' | 'USD';
+  pendiente?: boolean;
+}
+
+export interface ScrapedAccountMovements {
+  updatedAt: string;
+  items: AccountMovement[];
+}
+
 export interface ScrapedBalance {
   updatedAt: string;
   ARS: number;
@@ -211,6 +237,7 @@ export interface ScrapedBalance {
 export type CardsDoc = {
   updatedAt?: string;
   saldos?: Partial<Record<ScraperBank, ScrapedBalance>>;
+  movimientosCuenta?: Partial<Record<ScraperBank, ScrapedAccountMovements>>;
   ciclos?: Record<string, CardCycle>;
   servicios?: Partial<Record<ScraperBank, ScrapedServices>>;
 } & Partial<Record<ScraperBank, ScrapedBank>>;

@@ -51,6 +51,9 @@
           <span class="usd-hint">US$ {{ usd | number:'1.2-2':'es-AR' }}</span>
         }
 
+        @if (account.paidBy; as p) {
+          <span class="usd-hint">✓ Debitado {{ formatDate(p.fecha) }} · {{ p.descripcion }}</span>
+        }
         @if (account.auto; as auto) {
           <app-account-auto [auto]="auto" [total]="account.total" [exchangeRate]="exchangeRate" />
         }

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { forecastNextStatement } from '../forecast.js';
-import { parseGaliciaBalances, toSnapshot } from './galicia.js';
+import { parseGaliciaBalances, toAccountMovement, toGaliciaService, toSnapshot } from './galicia.js';
 
 const card = {
   last_digits: '1111',
@@ -64,5 +64,25 @@ describe('parseGaliciaBalances', () => {
   it('sums each currency from the accessible labels', () => {
     expect(parseGaliciaBalances(['Saldo en Pesos 12.345,67', 'Saldo en Dolares 1,50', 'Saldo en Pesos 100'])).toEqual({ ARS: 12445.67, USD: 1.5 });
     expect(parseGaliciaBalances(['Saldo en Pesos -500,00'])).toEqual({ ARS: -500, USD: 0 });
+  });
+});
+
+describe('galicia bills and account movements', () => {
+  it('maps a published debt, named by its alias', () => {
+    expect(toGaliciaService({
+      CompanyName: 'ARCA Mon físicas', AliasServicio: 'Monotributo', DigitalPaymentID: '20123456789',
+      BillDueDate: '20/11/2026', Amount: 84612.93, CurrencyShortDescription: '$', TienePagoAutomatico: false,
+      Empresa: { Code: 'AFIP', Description: 'ARCA Mon físicas' },
+    })).toEqual([{
+      key: 'galicia:AFIP:456789', empresa: 'Monotributo', rubro: 'ARCA Mon físicas',
+      vencimiento: '2026-11-20', importe: 84612.93, moneda: 'ARS', automatico: false,
+    }]);
+  });
+
+  it('maps account movements with debits negative', () => {
+    expect(toAccountMovement({ ID: 'a', Fecha: '08/11/2026', DescripcionAMostrar: 'Pago tarjeta visa', ImporteDebito: '-1.518.923,09', ImporteCredito: '0,00' }))
+      .toEqual([{ id: 'a', fecha: '2026-11-08', descripcion: 'Pago tarjeta visa', monto: -1518923.09, moneda: 'ARS' }]);
+    expect(toAccountMovement({ Fecha: '01/11/2026', DescripcionAMostrar: 'Ingreso', ImporteDebito: '0,00', ImporteCredito: '2.000.000,00', EsMovimientoPendiente: true }))
+      .toEqual([{ fecha: '2026-11-01', descripcion: 'Ingreso', monto: 2000000, moneda: 'ARS', pendiente: true }]);
   });
 });

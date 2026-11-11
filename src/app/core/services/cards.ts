@@ -2,7 +2,10 @@ import { Injectable, computed, signal } from '@angular/core';
 import { onAuthStateChanged } from 'firebase/auth';
 import { doc, onSnapshot, setDoc, type Unsubscribe } from 'firebase/firestore';
 import { firebaseAuth, firebaseDb } from './firebase';
-import { CardCycle, CardsDoc, ScrapeRequestsDoc, ScrapedBalance, ScrapedBank, ScrapedServices, ScraperBank } from '../models';
+import {
+  CardCycle, CardsDoc, ScrapeRequestsDoc, ScrapedAccountMovements, ScrapedBalance, ScrapedBank, ScrapedServices, ScraperBank,
+} from '../models';
+import { Debit } from '../domain/reconcile';
 
 const BANKS: readonly ScraperBank[] = ['santander', 'galicia'];
 
@@ -32,6 +35,18 @@ export class CardsService {
 
   /** Account balances per bank (latest read of each). */
   readonly saldos = computed<Partial<Record<ScraperBank, ScrapedBalance>>>(() => this.cardsDoc()?.saldos ?? {});
+
+  /** Recent account movements per bank (latest read of each). */
+  readonly accountMovements = computed<Partial<Record<ScraperBank, ScrapedAccountMovements>>>(
+    () => this.cardsDoc()?.movimientosCuenta ?? {},
+  );
+
+  /** All banks' movements, tagged with their bank (for reconciliation). */
+  readonly debits = computed<Debit[]>(() =>
+    (Object.entries(this.accountMovements()) as [ScraperBank, ScrapedAccountMovements | undefined][]).flatMap(
+      ([bank, m]) => (m?.items ?? []).map(i => ({ ...i, bank })),
+    ),
+  );
 
   /** Pending bills per bank (latest read of each). */
   readonly services = computed<ScrapedServices[]>(() =>

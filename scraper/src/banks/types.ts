@@ -65,6 +65,16 @@ export interface AccountBalance {
   USD: number;
 }
 
+/** One line of a bank account's movements (debits negative). */
+export interface AccountMovement {
+  id?: string;
+  fecha: string; // YYYY-MM-DD
+  descripcion: string;
+  monto: number;
+  moneda: Moneda;
+  pendiente?: boolean;
+}
+
 export interface ScrapeOptions {
   /** Last 4 digits to keep; empty = every credit card. */
   tarjetas: string[];
@@ -89,6 +99,8 @@ export interface BankAdapter {
   services?(page: Page): Promise<ServicePayment[]>;
   /** Account balances (all accounts of the bank, per currency). */
   balances?(page: Page): Promise<AccountBalance>;
+  /** Recent movements of the main pesos account. Runs right after `balances`. */
+  movements?(page: Page): Promise<AccountMovement[]>;
   /** TEMPORARY: masked capture of the accounts section, to learn its API. */
   captureAccounts?(page: Page): Promise<void>;
   /** Best effort; some banks block new logins while a session stays open. */

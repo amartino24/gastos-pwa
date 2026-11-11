@@ -12,13 +12,14 @@ import { ConfirmDialog } from '../../shared/components/confirm-dialog/confirm-di
 import { NewMonthDialog } from '../../shared/components/new-month-dialog/new-month-dialog';
 import { AppMenuComponent } from '../../shared/components/app-menu/app-menu';
 import { CardForecastComponent } from './components/card-forecast/card-forecast';
+import { AccountsOverviewComponent } from './components/accounts-overview/accounts-overview';
 import { monthTitle, nextMonthToCreate } from '../../shared/utils/months';
 
 /** Home: upcoming card statements and every month, newest first. */
 @Component({
   selector: 'app-months-list',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DecimalPipe, RouterLink, MatToolbarModule, MatButtonModule, MatIconModule, AppMenuComponent, CardForecastComponent],
+  imports: [DecimalPipe, RouterLink, MatToolbarModule, MatButtonModule, MatIconModule, AppMenuComponent, CardForecastComponent, AccountsOverviewComponent],
   templateUrl: './months-list.html',
   styleUrl: './months-list.scss',
 })

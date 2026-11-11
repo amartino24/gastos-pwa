@@ -1,11 +1,8 @@
-import { writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
 import type { BrowserContext, Locator, Page, Response } from 'playwright';
-import { captureMasked } from '../capture.js';
-import { parseArAmount } from '../parse.js';
-import { PATHS } from '../config.js';
-import { SERIALIZE_DOM_JS, maskJson, renderDom, stripQuery, type DomNode } from '../sanitize.js';
-import type { AccountBalance, BankAdapter, CardMovement, CardSnapshot, ClosedStatement, Moneda } from './types.js';
+import { parseArAmount, parseDate } from '../parse.js';
+import type {
+  AccountBalance, AccountMovement, BankAdapter, CardMovement, CardSnapshot, ClosedStatement, Moneda, ServicePayment,
+} from './types.js';
 
 /**
  * Galicia Online Banking. Login on onlinebanking.*, card data on tarjetas.*,
@@ -127,6 +124,89 @@ export function parseGaliciaBalances(texts: string[]): AccountBalance {
     else if (/peso/i.test(t)) out.ARS += amount;
   }
   return { ARS: Math.round(out.ARS * 100) / 100, USD: Math.round(out.USD * 100) / 100 };
+}
+
+interface DebtsResponse {
+  Debts?: {
+    CompanyName?: string;
+    AliasServicio?: string | null;
+    DigitalPaymentID?: string;
+    BillDueDate?: string; // dd/mm/yyyy
+    Amount?: number | string;
+    CurrencyShortDescription?: string;
+    TienePagoAutomatico?: boolean;
+    PagoAutomaticoGalicia?: boolean;
+    Empresa?: { Code?: string; Description?: string };
+  }[];
+}
+
+/** One pending debt → ServicePayment. The alias ("Monotributo") names it, like the user does. */
+export function toGaliciaService(d: NonNullable<DebtsResponse['Debts']>[number]): ServicePayment[] {
+  const vencimiento = d.BillDueDate ? parseDate(d.BillDueDate) : null;
+  const empresa = clean(d.AliasServicio) || clean(d.CompanyName) || clean(d.Empresa?.Description);
+  if (!vencimiento || !empresa) return [];
+  return [{
+    key: `galicia:${clean(d.Empresa?.Code) || empresa}:${clean(d.DigitalPaymentID).slice(-6)}`,
+    empresa,
+    rubro: clean(d.CompanyName) || undefined,
+    vencimiento,
+    importe: parseArAmount(d.Amount),
+    moneda: /U\$S|USD/i.test(d.CurrencyShortDescription ?? '') ? 'USD' : 'ARS',
+    automatico: !!(d.TienePagoAutomatico || d.PagoAutomaticoGalicia),
+  }];
+}
+
+interface MovementsAccountResponse {
+  Model?: {
+    Movimientos?: {
+      ID?: string;
+      Fecha?: string; // dd/mm/yyyy
+      DescripcionAMostrar?: string;
+      ImporteCredito?: string;
+      ImporteDebito?: string;
+      EsMovimientoPendiente?: boolean;
+    }[];
+  };
+}
+
+/** Debit "-1.234,56" / credit "1.234,56" → signed amount (debits negative). */
+export function toAccountMovement(m: NonNullable<NonNullable<MovementsAccountResponse['Model']>['Movimientos']>[number]): AccountMovement[] {
+  const fecha = m.Fecha ? parseDate(m.Fecha) : null;
+  if (!fecha) return [];
+  const debit = Math.abs(parseArAmount(m.ImporteDebito));
+  const credit = Math.abs(parseArAmount(m.ImporteCredito));
+  return [{
+    id: m.ID || undefined,
+    fecha,
+    descripcion: clean(m.DescripcionAMostrar),
+    monto: Math.round((credit - debit) * 100) / 100,
+    moneda: 'ARS',
+    pendiente: m.EsMovimientoPendiente || undefined,
+  }];
+}
+
+const clean = (s: string | null | undefined) => (s ?? '').replace(/\s+/g, ' ').trim();
+
+/** Resolves with the JSON of the first response matching `match`, from any page of the context. */
+function waitStoredResponse<T>(ctx: BrowserContext, match: (r: Response) => boolean): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      ctx.off('response', onResponse);
+      reject(new Error('no llegó la respuesta'));
+    }, TIMEOUT);
+    const onResponse = async (r: Response) => {
+      if (!match(r)) return;
+      try {
+        const json = (await r.json()) as T;
+        clearTimeout(timer);
+        ctx.off('response', onResponse);
+        resolve(json);
+      } catch {
+        /* keep waiting */
+      }
+    };
+    ctx.on('response', onResponse);
+  });
 }
 
 export function toSnapshot(card: OverviewCard, mov: MovementsResponse, today: string): CardSnapshot {
@@ -274,42 +354,18 @@ export const galicia: BankAdapter = {
     return result;
   },
 
-  /**
-   * TEMPORARY: "Pagos y recargas" lives on another site; until its data shape is known,
-   * save a *masked* capture (DOM + JSON responses) to logs/galicia-pagos-shape.json.
-   */
+  /** Pending bills from "Pagos de servicios" (pagosyrecargas.*), reached through the banking menu. */
   async services(page) {
     const ctx = page.context();
-    const xhr: unknown[] = [];
-    ctx.on('response', async r => {
-      if (!r.url().includes('bancogalicia.com.ar') || !(r.headers()['content-type'] ?? '').includes('json')) return;
-      try {
-        xhr.push({ method: r.request().method(), url: stripQuery(r.url()), body: maskJson(await r.json()) });
-      } catch {
-        /* ignore */
-      }
-    });
+    const debts = waitStoredResponse<DebtsResponse>(ctx, r => pathOf(r).endsWith('/Pagos/GetPublishedDebtsDataOrdered'));
     // pagosyrecargas.* only accepts sessions handed over by the banking menu
     // ("Pagos de servicios", menulink 409); a direct goto lands on "Sesión expirada".
     await page.goto(PAGOS_MENU_URL).catch(() => {});
-    const pagosPage = await step('pagos: abriendo pagos y recargas', () => waitForPage(ctx, PAGOS_HOST));
-    page = pagosPage;
-    await page.waitForLoadState('networkidle', { timeout: 20_000 }).catch(() => {});
-    await page.waitForTimeout(3_000);
-    const dom: string[] = [];
-    for (const frame of page.frames()) {
-      const tree = (await frame.evaluate(SERIALIZE_DOM_JS).catch(() => null)) as DomNode | null;
-      if (tree) dom.push(`URL: ${stripQuery(frame.url())}\n\n${renderDom(tree)}`);
-    }
-    await writeFile(
-      join(PATHS.logs, 'galicia-pagos-shape.json'),
-      JSON.stringify({ url: stripQuery(page.url()), xhr, dom }, null, 2),
-      { mode: 0o600 },
-    );
-    return [];
+    await step('pagos: abriendo pagos y recargas', () => waitForPage(ctx, PAGOS_HOST));
+    const body = await step('pagos: deudas', () => debts);
+    return (body.Debts ?? []).flatMap(toGaliciaService);
   },
 
-  /** "Mis cuentas" renders each account with an accessible "Saldo en Pesos/Dolares N" text. */
   async balances(page) {
     await page.goto(ACCOUNTS_URL);
     const live = await step('cuentas: página de cuentas', () => waitForPage(page.context(), 'cuentas.bancogalicia.com.ar'));
@@ -318,12 +374,16 @@ export const galicia: BankAdapter = {
     return parseGaliciaBalances(await labels.allTextContents());
   },
 
-  async captureAccounts(page) {
-    const live = page.context().pages().filter(p => !p.isClosed()).at(-1) ?? page;
-    await captureMasked(live, 'galicia-cuentas-shape', async () => {
-      // open the pesos account to load its movements
-      await live.locator('[role="button"][aria-label*="Pesos"]').first().click({ timeout: 20_000 });
-    });
+  /** Opens the pesos account on "Mis cuentas" (left there by `balances`) and reads its movements. */
+  async movements(page) {
+    const ctx = page.context();
+    const live = ctx.pages().filter(p => !p.isClosed()).at(-1) ?? page;
+    const response = waitStoredResponse<MovementsAccountResponse>(ctx, r => pathOf(r).endsWith('/Cuentas/GetMovimientosCuenta'));
+    await step('cuentas: abrir cuenta en pesos', () =>
+      live.locator('[role="button"][aria-label*="Pesos"]').first().click({ timeout: 20_000 }),
+    );
+    const body = await step('cuentas: movimientos', () => response);
+    return (body.Model?.Movimientos ?? []).flatMap(toAccountMovement);
   },
 
   async logout(page: Page) {

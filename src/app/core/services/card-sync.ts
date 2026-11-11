@@ -17,9 +17,10 @@ export class CardSyncService {
       const cycles = this.cards.cycles();
       const services = this.cards.services();
       const saldos = this.cards.saldos();
+      const debits = this.cards.debits();
       const ready = !this.months.loading() && this.months.authState() === 'ready';
       if (!ready) return;
-      untracked(() => this.months.applyScraped(cycles, services, saldos, arDay(new Date().toISOString())));
+      untracked(() => this.months.applyScraped(cycles, services, saldos, debits, arDay(new Date().toISOString())));
     });
   }
 }
