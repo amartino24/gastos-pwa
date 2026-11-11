@@ -70,18 +70,7 @@
   @if (movements().length) {
     <details class="fold">
       <summary><mat-icon aria-hidden="true">expand_more</mat-icon> Movimientos de la cuenta ({{ movements().length }})</summary>
-      <ul class="list">
-        @for (m of movements(); track $index) {
-          <li>
-            <span class="date">{{ shortDate(m.fecha) }}</span>
-            <span class="desc">
-              {{ m.descripcion }}
-              @if (m.pendiente) { <span class="tag warn">pendiente</span> }
-            </span>
-            <span class="amount" [class.credit]="m.monto > 0">{{ signed(m) }}</span>
-          </li>
-        }
-      </ul>
+      <app-account-movements [items]="movements()" />
     </details>
   }
 </article>

@@ -4,6 +4,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { RouterLink } from '@angular/router';
 import { AccountMovement, SCRAPER_BANK_LABELS, ScrapedMovement, ScraperBank } from '../../../../core/models';
 import { RefreshButtonComponent } from '../../../../shared/components/card-summary/refresh-button';
+import { AccountMovementsComponent } from '../../../../shared/components/account-movements/account-movements';
 import {
   CardView, byDateDesc, formatMovementAmount, installmentEnd, isNewMovement, paymentMonth, showNewBadge,
 } from '../../../../shared/utils/cards';
@@ -24,7 +25,7 @@ export interface BankPanelData {
 @Component({
   selector: 'app-bank-panel',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DecimalPipe, MatIconModule, RouterLink, RefreshButtonComponent],
+  imports: [DecimalPipe, MatIconModule, RouterLink, RefreshButtonComponent, AccountMovementsComponent],
   templateUrl: './bank-panel.html',
   styleUrl: './bank-panel.scss',
 })
@@ -45,6 +46,4 @@ export class BankPanelComponent {
   protected readonly showNewBadge = showNewBadge;
   protected readonly money = formatMovementAmount;
   protected readonly sortedConsumos = (list: ScrapedMovement[]) => byDateDesc(list);
-  protected readonly signed = (m: AccountMovement) =>
-    `${m.monto < 0 ? '-' : '+'}$${Math.abs(m.monto).toLocaleString('es-AR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }

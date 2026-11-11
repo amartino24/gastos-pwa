@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { forecastNextStatement } from './forecast.js';
+import { fillRunningBalance, forecastNextStatement } from './forecast.js';
 
 describe('forecastNextStatement', () => {
   it('sums movements per currency, refunds included', () => {
@@ -13,5 +13,21 @@ describe('forecastNextStatement', () => {
       ],
     });
     expect(f).toEqual({ ARS: 1300.1, USD: 9.99, movimientos: 4 });
+  });
+});
+
+describe('fillRunningBalance', () => {
+  it('rebuilds the balance after each movement from today\'s balance', () => {
+    const out = fillRunningBalance([
+      { fecha: '2026-11-10', descripcion: 'b', monto: -100, moneda: 'ARS' },
+      { fecha: '2026-11-08', descripcion: 'a', monto: 1000, moneda: 'ARS' },
+      { fecha: '2026-11-11', descripcion: 'p', monto: -5, moneda: 'ARS', pendiente: true },
+    ], 900);
+    expect(out.map(m => m.saldo)).toEqual([900, 1000, undefined]);
+  });
+
+  it('keeps what the bank sent', () => {
+    const list = [{ fecha: '2026-11-10', descripcion: 'b', monto: -100, moneda: 'ARS' as const, saldo: 7 }];
+    expect(fillRunningBalance(list, 900)).toBe(list);
   });
 });

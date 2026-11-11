@@ -3,7 +3,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { doc, onSnapshot, setDoc, type Unsubscribe } from 'firebase/firestore';
 import { firebaseAuth, firebaseDb } from './firebase';
 import {
-  CardCycle, CardsDoc, ScrapeRequestsDoc, ScrapedAccountMovements, ScrapedBalance, ScrapedBank, ScrapedServices, ScraperBank,
+  AccountMovement, CardCycle, CardsDoc, ScrapeRequestsDoc, ScrapedAccountMovements, ScrapedBalance, ScrapedBank, ScrapedServices, ScraperBank,
 } from '../models';
 import { Debit } from '../domain/reconcile';
 
@@ -40,6 +40,18 @@ export class CardsService {
   readonly accountMovements = computed<Partial<Record<ScraperBank, ScrapedAccountMovements>>>(
     () => this.cardsDoc()?.movimientosCuenta ?? {},
   );
+
+  /** Account movements of one month per bank, from the accumulated history (newest first). */
+  monthMovements(ym: string): { bank: ScraperBank; items: AccountMovement[] }[] {
+    const hist = this.cardsDoc()?.movHist ?? {};
+    return (Object.entries(hist) as [ScraperBank, Record<string, Record<string, AccountMovement>> | undefined][])
+      .map(([bank, months]) => ({
+        bank,
+        items: Object.values(months?.[ym] ?? {}).sort((a, b) => b.fecha.localeCompare(a.fecha)),
+      }))
+      .filter(b => b.items.length > 0)
+      .sort((a, b) => a.bank.localeCompare(b.bank));
+  }
 
   /** All banks' movements, tagged with their bank (for reconciliation). */
   readonly debits = computed<Debit[]>(() =>

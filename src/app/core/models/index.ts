@@ -221,6 +221,8 @@ export interface AccountMovement {
   monto: number;
   moneda: 'ARS' | 'USD';
   pendiente?: boolean;
+  /** Account balance right after this movement. */
+  saldo?: number;
 }
 
 export interface ScrapedAccountMovements {
@@ -238,6 +240,8 @@ export type CardsDoc = {
   updatedAt?: string;
   saldos?: Partial<Record<ScraperBank, ScrapedBalance>>;
   movimientosCuenta?: Partial<Record<ScraperBank, ScrapedAccountMovements>>;
+  /** Every settled account movement seen, per bank → month (YYYY-MM) → stable key. */
+  movHist?: Partial<Record<ScraperBank, Record<string, Record<string, AccountMovement>>>>;
   ciclos?: Record<string, CardCycle>;
   servicios?: Partial<Record<ScraperBank, ScrapedServices>>;
 } & Partial<Record<ScraperBank, ScrapedBank>>;

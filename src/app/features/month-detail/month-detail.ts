@@ -12,6 +12,7 @@ import { calcPaidSummary, totalUsd, upcomingDue } from '../../core/domain/month-
 import { MedioSectionComponent } from './components/medio-section/medio-section';
 import { BankAccountsComponent } from './components/bank-accounts/bank-accounts';
 import { MonthCardsComponent } from './components/month-cards/month-cards';
+import { MonthMovementsComponent } from './components/month-movements/month-movements';
 import { SummaryTableComponent } from './components/summary-table/summary-table';
 import { MonthHeaderComponent } from './components/month-header/month-header';
 import { AppMenuComponent } from '../../shared/components/app-menu/app-menu';
@@ -24,7 +25,7 @@ import { monthTitle } from '../../shared/utils/months';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     DecimalPipe, MatToolbarModule, MatButtonModule, MatIconModule,
-    MedioSectionComponent, BankAccountsComponent, MonthCardsComponent, SummaryTableComponent, MonthHeaderComponent, AppMenuComponent,
+    MedioSectionComponent, BankAccountsComponent, MonthCardsComponent, MonthMovementsComponent, SummaryTableComponent, MonthHeaderComponent, AppMenuComponent,
   ],
   templateUrl: './month-detail.html',
   styleUrl: './month-detail.scss',

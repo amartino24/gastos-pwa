@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { cycleKey, toCycles, type CardResult } from './firestore.js';
+import { cycleKey, movementHistory, toCycles, type CardResult } from './firestore.js';
 
 const card: CardResult = {
   tarjeta: 'Visa ···4871',
@@ -31,5 +31,18 @@ describe('toCycles', () => {
 
   it('skips the open cycle without a due date', () => {
     expect(toCycles('galicia', { ...card, vencimiento: undefined }, 'x')).toEqual([]);
+  });
+});
+
+describe('movementHistory', () => {
+  it('groups settled movements by month with stable keys, skipping pending', () => {
+    const h = movementHistory([
+      { id: '9/1', fecha: '2026-11-08', descripcion: 'Pago tarjeta', monto: -100, moneda: 'ARS' },
+      { fecha: '2026-10-31', descripcion: 'Sueldo. Oct', monto: 5000, moneda: 'ARS' },
+      { fecha: '2026-11-09', descripcion: 'x', monto: -1, moneda: 'ARS', pendiente: true },
+    ]);
+    expect(Object.keys(h).sort()).toEqual(['2026-10', '2026-11']);
+    expect(Object.keys(h['2026-11']!)).toEqual(['id_9_1']);
+    expect(Object.keys(h['2026-10']!)).toEqual(['2026-10-31_5000_00_Sueldo_Oct']);
   });
 });

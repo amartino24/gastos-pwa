@@ -80,8 +80,8 @@ describe('galicia bills and account movements', () => {
   });
 
   it('maps account movements with debits negative', () => {
-    expect(toAccountMovement({ ID: 'a', Fecha: '08/11/2026', DescripcionAMostrar: 'Pago tarjeta visa', ImporteDebito: '-1.518.923,09', ImporteCredito: '0,00' }))
-      .toEqual([{ id: 'a', fecha: '2026-11-08', descripcion: 'Pago tarjeta visa', monto: -1518923.09, moneda: 'ARS' }]);
+    expect(toAccountMovement({ ID: 'a', Fecha: '08/11/2026', DescripcionAMostrar: 'Pago tarjeta visa', ImporteDebito: '-1.518.923,09', ImporteCredito: '0,00', SaldoParcial: 23707.5 }))
+      .toEqual([{ id: 'a', fecha: '2026-11-08', descripcion: 'Pago tarjeta visa', monto: -1518923.09, moneda: 'ARS', saldo: 23707.5 }]);
     expect(toAccountMovement({ Fecha: '01/11/2026', DescripcionAMostrar: 'Ingreso', ImporteDebito: '0,00', ImporteCredito: '2.000.000,00', EsMovimientoPendiente: true }))
       .toEqual([{ fecha: '2026-11-01', descripcion: 'Ingreso', monto: 2000000, moneda: 'ARS', pendiente: true }]);
   });

@@ -72,6 +72,7 @@ interface GqlMovement {
     description?: { title?: string; detail?: string };
     csueldo?: { currency?: string | null; value?: number | string | null };
     ccorriente?: { currency?: string | null; value?: number | string | null };
+    balance?: { value?: number | string | null };
   };
 }
 
@@ -119,6 +120,7 @@ export function toSantanderMovement(m: GqlMovement): AccountMovement[] {
     monto: Math.round(parseArAmount(col.value) * 100) / 100,
     moneda: /usd/i.test(col.currency ?? '') ? 'USD' : 'ARS',
     pendiente: m.isPending || undefined,
+    saldo: m.content?.balance?.value != null ? parseArAmount(m.content.balance.value) : undefined,
   }];
 }
 

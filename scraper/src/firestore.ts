@@ -54,7 +54,28 @@ export async function writeAccountMovements(
   uid: string, bank: BankId, entry: { updatedAt: string; items: AccountMovement[] },
 ): Promise<void> {
   const ref = (await firestore()).doc(`users/${uid}/data/cards`);
-  await ref.set({ movimientosCuenta: { [bank]: entry } }, { merge: true });
+  // merge: maps accumulate, so each month keeps every movement ever seen (latest read is only ~30).
+  await ref.set({ movimientosCuenta: { [bank]: entry }, movHist: { [bank]: movementHistory(entry.items) } }, { merge: true });
+}
+
+/**
+ * Settled movements grouped by month and keyed by a stable id, ready to be merged
+ * into `movHist.<bank>`. Pending ones are left out: they change when they settle.
+ */
+export function movementHistory(items: AccountMovement[]): Record<string, Record<string, AccountMovement>> {
+  const out: Record<string, Record<string, AccountMovement>> = {};
+  for (const m of items) {
+    if (m.pendiente) continue;
+    const key = movementKey(m);
+    (out[m.fecha.slice(0, 7)] ??= {})[key] = JSON.parse(JSON.stringify(m)) as AccountMovement;
+  }
+  return out;
+}
+
+/** Bank id when there is one; else date + amount + description (Firestore-safe characters only). */
+export function movementKey(m: AccountMovement): string {
+  const raw = m.id ? `id_${m.id}` : `${m.fecha}_${m.monto.toFixed(2)}_${m.descripcion}`;
+  return raw.replace(/[^A-Za-z0-9_-]+/g, '_').slice(0, 120);
 }
 
 /** Account balances per bank, in `saldos.<bank>` (latest read). */

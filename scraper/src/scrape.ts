@@ -14,7 +14,7 @@ import { ADAPTERS, adapterFor } from './banks/index.js';
 import type { AccountBalance, AccountMovement, BankId, CardSnapshot, Credentials, ServicePayment } from './banks/types.js';
 import { PATHS, ensureHome, loadConfig, loadState, saveState, type ScraperState } from './config.js';
 import { writeAccountMovements, writeBalance, writeBank, writeServices, type CardResult } from './firestore.js';
-import { forecastNextStatement } from './forecast.js';
+import { fillRunningBalance, forecastNextStatement } from './forecast.js';
 import { readSecret } from './keychain.js';
 import { SERIALIZE_DOM_JS, renderDom, stripQuery, type DomNode } from './sanitize.js';
 import { loadSeen, markSeen, pruneSeen, saveSeen } from './seen.js';
@@ -146,12 +146,13 @@ async function runBank(bank: BankId, tarjetas: string[], mode: BrowserMode): Pro
           return null;
         })
       : undefined;
-    const movements = adapter.movements
+    const rawMovements = adapter.movements
       ? await adapter.movements(livePage(ctx, page)).catch(err => {
           log(`${bank}: no se pudieron leer los movimientos — ${err instanceof Error ? err.message.split('\n')[0] : String(err)}`);
           return null;
         })
       : undefined;
+    const movements = rawMovements && balance ? fillRunningBalance(rawMovements, balance.ARS) : rawMovements;
     return { cards, services, balance, movements };
   } catch (err) {
     await dumpFailure(livePage(ctx, page), bank);

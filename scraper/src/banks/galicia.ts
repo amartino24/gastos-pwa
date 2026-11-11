@@ -164,6 +164,7 @@ interface MovementsAccountResponse {
       DescripcionAMostrar?: string;
       ImporteCredito?: string;
       ImporteDebito?: string;
+      SaldoParcial?: number | string;
       EsMovimientoPendiente?: boolean;
     }[];
   };
@@ -182,6 +183,7 @@ export function toAccountMovement(m: NonNullable<NonNullable<MovementsAccountRes
     monto: Math.round((credit - debit) * 100) / 100,
     moneda: 'ARS',
     pendiente: m.EsMovimientoPendiente || undefined,
+    saldo: m.SaldoParcial != null && m.SaldoParcial !== '' ? parseArAmount(m.SaldoParcial) : undefined,
   }];
 }
 

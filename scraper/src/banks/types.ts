@@ -73,6 +73,8 @@ export interface AccountMovement {
   monto: number;
   moneda: Moneda;
   pendiente?: boolean;
+  /** Account balance right after this movement. */
+  saldo?: number;
 }
 
 export interface ScrapeOptions {
