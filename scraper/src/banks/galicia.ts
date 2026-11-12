@@ -389,9 +389,10 @@ export const galicia: BankAdapter = {
   },
 
   async logout(page: Page) {
-    const out = page.locator('#LogOut_a');
-    if (!(await out.isVisible().catch(() => false))) return;
-    await out.click({ timeout: 5_000 });
+    // On "Mis cuentas" the link sits in a collapsed menu (present but hidden): click it via the DOM.
+    const out = page.locator('#LogOut_a').first();
+    if ((await out.count().catch(() => 0)) === 0) return;
+    await out.evaluate(el => (el as HTMLElement).click());
     await page.getByRole('button', { name: /^(s[ií]|aceptar|cerrar sesi[oó]n|salir)$/i }).first().click({ timeout: 3_000 }).catch(() => {});
     await page.waitForTimeout(1_500);
   },
