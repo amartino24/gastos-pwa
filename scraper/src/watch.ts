@@ -19,8 +19,8 @@ import { restoreSleep } from './sleep-guard.js';
 import { firestore } from './firestore.js';
 
 const HEARTBEAT_MS = 5 * 60_000;
-/** Santander blocks logins for ~5 min after a session; never hit a bank faster than this. */
-const MIN_GAP_MS = 6 * 60_000;
+/** Santander blocks new logins for ~5 min after a session; the others can run back to back. */
+const MIN_GAP_MS: Partial<Record<BankId, number>> = { santander: 6 * 60_000 };
 const MAX_REQUEST_AGE_MS = 12 * 3_600_000;
 
 interface BankRequest {
@@ -64,7 +64,7 @@ async function pump(): Promise<void> {
   inFlight = request;
   try {
     // Mark it taken right away so the app shows "Actualizando…" and it isn't re-queued.
-    const wait = MIN_GAP_MS - (Date.now() - (lastStart.get(bank) ?? 0));
+    const wait = (MIN_GAP_MS[bank] ?? 0) - (Date.now() - (lastStart.get(bank) ?? 0));
     if (wait > 0) {
       // Taken, but waiting: the app shows a countdown instead of "Actualizando…".
       const waitingUntil = new Date(Date.now() + wait).toISOString();
