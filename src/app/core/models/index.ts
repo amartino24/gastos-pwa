@@ -137,9 +137,10 @@ export const MONTH_NAMES = [
   'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
 ];
 
-export const SCRAPER_BANK_LABELS: Record<'santander' | 'galicia', string> = {
+export const SCRAPER_BANK_LABELS: Record<'santander' | 'galicia' | 'mercadopago', string> = {
   santander: 'Santander',
   galicia: 'Galicia',
+  mercadopago: 'Mercado Pago',
 };
 
 export const MEDIO_LABELS: Record<Medio, string> = {
@@ -149,7 +150,7 @@ export const MEDIO_LABELS: Record<Medio, string> = {
 
 // ── Card consumption scraper (written by /scraper into users/{uid}/data/cards) ──
 
-export type ScraperBank = 'santander' | 'galicia';
+export type ScraperBank = 'santander' | 'galicia' | 'mercadopago';
 
 export interface ScrapedMovement {
   fecha: string; // YYYY-MM-DD

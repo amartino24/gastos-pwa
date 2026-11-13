@@ -28,6 +28,8 @@ export interface ScraperConfig {
   banks: BankId[];
   /** Last 4 digits of the cards to track per bank. Missing/empty = all credit cards. */
   tarjetas?: Partial<Record<BankId, string[]>>;
+  /** Android Virtual Device with the Mercado Pago app logged in. */
+  avd?: string;
 }
 
 export interface ScraperState {

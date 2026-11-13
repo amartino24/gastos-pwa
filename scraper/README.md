@@ -77,6 +77,18 @@ Los datos en Firestore no se tocan. Probar todo: `npm run test:wake` (y después
 
 Después de las tarjetas, lee las facturas pendientes de "Pagos y servicios" (`obtenerPagosPendientes`), sin los resúmenes de tarjeta, y las guarda en `servicios.santander`. La app pone cada una en el mes de su vencimiento, en Banco: actualiza el gasto vinculado (o uno con el nombre de la empresa, o lo crea), respeta un monto editado a mano y marca pagado un débito automático cuando pasa el vencimiento (una sola vez). El vínculo pasa al mes siguiente aunque renombres el gasto.
 
+## Mercado Pago (app Android en el emulador)
+
+La web muestra poco, así que se lee la app desde el emulador de Android Studio (AVD `Pixel_8_Pro_API_35`, configurable con `avd` en config.json): saldo del home, y de la tarjeta de crédito el resumen abierto (total, cierre, vencimiento) con todos sus consumos y cuotas. El login (con 2FA) lo hacés vos una vez en el emulador; el scraper reusa esa sesión, no inicia sesión nunca y solo navega para leer.
+
+Mercado Pago exige bloqueo de pantalla: el scraper dibuja el patrón de Android guardado en el Llavero cuando la app (o Android) lo pide:
+
+```bash
+security add-generic-password -U -s gastos-scraper.mercadopago -a patron -w   # puntos 1..9 de la grilla, ej. 1-4-7-8-9
+```
+
+Si el emulador no está abierto, arranca sin ventana y lo apaga al terminar.
+
 ## Cuentas: saldos, movimientos y conciliación
 
 - Santander: saldos de `obtenerSaldosCuentas` (home); movimientos de la cuenta en pesos por GraphQL (`movements`) desde "Ver movimientos". Pagos y servicios desde el acceso rápido del home.

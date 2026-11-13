@@ -1,6 +1,6 @@
 import type { Page } from 'playwright';
 
-export type BankId = 'santander' | 'galicia';
+export type BankId = 'santander' | 'galicia' | 'mercadopago';
 export type Moneda = 'ARS' | 'USD';
 
 export interface Cuota {

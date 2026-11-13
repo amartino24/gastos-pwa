@@ -7,7 +7,7 @@ import {
 } from '../models';
 import { Debit } from '../domain/reconcile';
 
-const BANKS: readonly ScraperBank[] = ['santander', 'galicia'];
+const BANKS: readonly ScraperBank[] = ['santander', 'galicia', 'mercadopago'];
 
 /**
  * Live view of the local scraper's output (`data/cards`, read-only here) and of

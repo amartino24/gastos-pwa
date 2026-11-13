@@ -19,6 +19,7 @@ import { readSecret } from './keychain.js';
 import { SERIALIZE_DOM_JS, renderDom, stripQuery, type DomNode } from './sanitize.js';
 import { loadSeen, markSeen, pruneSeen, saveSeen } from './seen.js';
 import { holdSleep } from './sleep-guard.js';
+import { DEFAULT_AVD, runMercadoPago } from './banks/mercadopago.js';
 
 /** YYYY-MM-DD in Buenos Aires time. */
 const arDay = (d: Date) => d.toLocaleDateString('sv-SE', { timeZone: 'America/Argentina/Buenos_Aires' });
@@ -167,7 +168,9 @@ async function runBank(bank: BankId, tarjetas: string[], mode: BrowserMode): Pro
  * Tries the mode that worked last time for this bank (headless by default); if it
  * fails, retries once off-screen and remembers whichever mode succeeded.
  */
-async function runWithFallback(bank: BankId, tarjetas: string[], state: ScraperState): Promise<BankRun> {
+async function runWithFallback(bank: BankId, tarjetas: string[], state: ScraperState, avd?: string): Promise<BankRun> {
+  // Mercado Pago is read from its Android app in the emulator, not from a browser.
+  if (bank === 'mercadopago') return runMercadoPago(avd ?? DEFAULT_AVD);
   if (flag('headed')) return runBank(bank, tarjetas, 'headed');
   const first: BrowserMode = state.mode?.[bank] ?? 'headless';
   try {
@@ -218,7 +221,7 @@ async function main(): Promise<void> {
       }
       const updatedAt = new Date().toISOString();
       try {
-        const { cards: snapshots, services, balance, movements } = await runWithFallback(bank, config.tarjetas?.[bank] ?? [], state);
+        const { cards: snapshots, services, balance, movements } = await runWithFallback(bank, config.tarjetas?.[bank] ?? [], state, config.avd);
         const nuevos = markSeen(seen, bank, snapshots, today);
         const tarjetas: CardResult[] = snapshots.map((c, i) => ({ ...c, forecast: forecastNextStatement(c), nuevos: nuevos[i]! }));
         if (!flag('dry-run')) {
