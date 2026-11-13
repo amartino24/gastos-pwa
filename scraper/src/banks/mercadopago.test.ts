@@ -61,6 +61,7 @@ describe('mercadopago app parsing', () => {
     expect(patternGrid([node('', '', 'lockPattern')])).toBeDefined();
     expect(patternGrid([node('Desbloqueá con PIN o patrón')])).toBeUndefined();
     expect(patternPoints('1-5-9-6', [150, 1344, 1194, 2388])).toEqual([[324, 1518], [672, 1866], [1020, 2214], [1020, 1866]]);
+    expect(patternPoints('1596', [150, 1344, 1194, 2388])).toEqual(patternPoints('1-5-9-6', [150, 1344, 1194, 2388]));
     expect(() => patternPoints('1-2', [0, 0, 300, 300])).toThrow();
     expect(() => patternPoints('1-2-3-0', [0, 0, 300, 300])).toThrow();
   });

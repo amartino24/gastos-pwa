@@ -109,9 +109,10 @@ export async function swipe(x1: number, y1: number, x2: number, y2: number, ms =
   await adb('shell', 'input', 'swipe', String(x1), String(y1), String(x2), String(y2), String(ms));
 }
 
-/** "1-4-7-8-9" → centers of those dots in a 3×3 pattern grid with the given bounds. */
+/** "1-4-7-8-9" or "14789" → centers of those dots in a 3×3 pattern grid with the given bounds. */
 export function patternPoints(pattern: string, bounds: UiNode['bounds']): [number, number][] {
-  const dots = pattern.split(/\D+/).filter(Boolean).map(Number);
+  // One digit per dot, with or without separators: "1-4-7-8-9" or "14789".
+  const dots = pattern.replace(/\D+/g, '').split('').map(Number);
   if (dots.length < 4 || dots.some(d => d < 1 || d > 9)) throw new Error('el patrón tiene que ser de 4 a 9 puntos del 1 al 9 (ej. 1-4-7-8-9)');
   const [x1, y1, x2, y2] = bounds;
   const cw = (x2 - x1) / 3;
