@@ -112,6 +112,17 @@ async function heartbeat(): Promise<void> {
   }
 }
 
+// A restart while a run was waiting/running leaves it marked as taken: hand those back to the queue.
+{
+  const data = ((await ref.get()).data() ?? {}) as Partial<Record<BankId, BankRequest>>;
+  for (const bank of config.banks) {
+    if (data[bank]?.state === 'waiting' || data[bank]?.state === 'running') {
+      await ref.set({ [bank]: { handledRequest: null, state: 'idle' } }, { merge: true });
+      log(`${bank}: pedido interrumpido por un reinicio, lo retomo`);
+    }
+  }
+}
+
 ref.onSnapshot(
   snap => {
     const data = (snap.data() ?? {}) as Partial<Record<BankId, BankRequest>>;
